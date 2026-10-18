@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: yolda
+      POSTGRES_PASSWORD: yolda
+      POSTGRES_DB: yolda
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yolda"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://yolda:yolda@postgres:5432/yolda
+      SECRET_KEY: ${SECRET_KEY:?.env da SECRET_KEY kerak}
+      BOT_API_KEY: ${BOT_API_KEY:?.env da BOT_API_KEY kerak}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SEED_DEMO: ${SEED_DEMO:-false}
+      DEMO_SIMULATION: ${DEMO_SIMULATION:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"   # restoranlar saytlari shu portga (odatda reverse-proxy / HTTPS orqali) /api/v1 ga murojaat qiladi
+
+  bot:
+    build: ../kurier-bot
+    restart: unless-stopped
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN:?.env da BOT_TOKEN kerak}
+      BOT_API_KEY: ${BOT_API_KEY:?.env da BOT_API_KEY kerak}
+      YOLDA_URL: http://backend:8000
+    volumes:
+      - botdata:/app/data
+    depends_on:
+      - backend
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:
+  botdata:

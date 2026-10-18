@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+.env
+.mondi_key
+*.pyc
+.pytest_cache/
