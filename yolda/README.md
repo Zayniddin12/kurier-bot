@@ -36,7 +36,7 @@ Telegram bot ──(X-Bot-Key: /api/bot/state, har 2 s)────────�
 cp .env.example .env        # SECRET_KEY, BOT_API_KEY, BOT_TOKEN, ADMIN_EMAIL, ADMIN_PASSWORD ni to'ldiring
 docker compose up -d --build
 ```
-- Panel: http://localhost:8080 · API hujjati: http://localhost:8000/docs
+- Panel: https://PANEL_HOST · API hujjati: https://API_HOST/docs (Caddy HTTPS sertifikatni o'zi oladi; 80/443 portlar bo'sh bo'lishi kerak)
 - Birinchi ishga tushishda migratsiyalar qo'llanadi va `ADMIN_EMAIL`/`ADMIN_PASSWORD` bilan administrator yaratiladi (demo ma'lumot **yo'q**).
 - Internetga chiqarishda backend (`/api/v1`) va panel oldiga HTTPS reverse-proxy (nginx/Caddy) qo'ying; `CORS_ORIGINS` ga panel domenini yozing.
 - Bot — alohida konteyner, faqat chiqish (outbound) ulanish kerak: Telegram va `backend`. Webhook/ochiq port shart emas.

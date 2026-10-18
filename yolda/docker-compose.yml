@@ -29,8 +29,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "8000:8000"   # restoranlar saytlari shu portga (odatda reverse-proxy / HTTPS orqali) /api/v1 ga murojaat qiladi
 
   bot:
     build: ../kurier-bot
@@ -49,9 +47,24 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      PANEL_HOST: ${PANEL_HOST:?.env da PANEL_HOST kerak}
+      API_HOST: ${API_HOST:?.env da API_HOST kerak}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
 
 volumes:
   pgdata:
   botdata:
+  caddy_data:
