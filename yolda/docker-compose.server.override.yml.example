@@ -1,0 +1,13 @@
+services:
+  caddy:
+    profiles: ["disabled"]
+  backend:
+    container_name: yolda-backend
+    networks: [default, web]
+  frontend:
+    container_name: yolda-frontend
+    networks: [default, web]
+networks:
+  web:
+    external: true
+    name: minor-parking_web
