@@ -21,6 +21,14 @@ onMounted(() => {
   setTimeout(() => map.invalidateSize(), 50)
 })
 onBeforeUnmount(() => map?.remove())
+const ALNUM = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+function genKey() {
+  const b = new Uint32Array(32); crypto.getRandomValues(b)
+  f.api_key = 'yl_live_' + Array.from(b, n => ALNUM[n % ALNUM.length]).join('')
+}
+async function copyKey() {
+  try { await navigator.clipboard.writeText(f.api_key); ui.toast('Kalit nusxalandi') } catch { ui.toast("Nusxalab bo'lmadi", 'var(--red)') }
+}
 async function go() {
   err.value = ''
   if (!f.name.trim() || !f.address.trim()) { err.value = 'Nom va manzilni kiriting'; return }
@@ -46,7 +54,10 @@ async function go() {
       <div class="field full"><label>Xaritadan nuqta tanlang {{ picked ? `(${f.lat}, ${f.lng})` : '' }}</label><div ref="mapEl" class="mm" /></div>
       <div class="field"><label>Integratsiya</label><select v-model="f.integration" class="inp"><option>API</option><option>POS iiko</option><option>POS R-Keeper</option><option>Planshet</option></select></div>
       <div class="field"><label>Telefon</label><input v-model="f.phone" class="inp" /></div>
-      <div class="field full"><label>Restoran API kaliti (ixtiyoriy)</label><input v-model="f.api_key" class="inp" placeholder="yl_live_… — bo'sh qoldirsangiz, kalit avtomatik yaratiladi" /></div>
+      <div class="field full"><label>Restoran API kaliti</label>
+        <div class="row" style="gap:6px"><input v-model="f.api_key" class="inp" style="flex:1" placeholder="yl_live_… — «Yaratish» tugmasini bosing" />
+          <Btn sm @click="genKey">Yaratish</Btn><Btn sm icon="copy" :disabled="!f.api_key" @click="copyKey">Nusxalash</Btn></div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Kalitni nusxalab restoran dasturchisiga bering. Ulangandan keyin kalit qayta ko'rsatilmaydi. Bo'sh qoldirsangiz, ulanganda avtomatik yaratiladi.</div></div>
       <div class="field full"><label>Webhook URL (ixtiyoriy)</label><input v-model="f.webhook_url" class="inp" placeholder="https://" /></div>
       <div v-if="err" class="err full" style="color:var(--red);font-size:12px">{{ err }}</div>
     </div>
