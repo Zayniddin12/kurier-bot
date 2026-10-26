@@ -3,11 +3,11 @@ import { onMounted, onBeforeUnmount, reactive, ref } from 'vue'
 import L from 'leaflet'
 import { post, errMsg } from '@/api/client'
 import { useUiStore } from '@/stores/ui'
-import { CUISINES, DISTRICTS } from '@/constants/statuses'
+import { CUISINES } from '@/constants/statuses'
 import KeyModal from './KeyModal.vue'
 const emit = defineEmits<{ close: []; done: [] }>()
 const ui = useUiStore()
-const f = reactive({ name: '', cuisine: CUISINES[0], district: DISTRICTS[0], address: '', lat: 41.3111, lng: 69.2797, integration: 'API', phone: '', webhook_url: '', api_key: '' })
+const f = reactive({ name: '', cuisine: CUISINES[0], address: '', lat: 41.3111, lng: 69.2797, phone: '', webhook_url: '', api_key: '' })
 const err = ref(''), busy = ref(false), res = ref<any>(null), picked = ref(false)
 const mapEl = ref<HTMLElement>()
 let map: L.Map, marker: L.Marker
@@ -17,10 +17,21 @@ onMounted(() => {
   map.on('click', (e: L.LeafletMouseEvent) => {
     f.lat = +e.latlng.lat.toFixed(6); f.lng = +e.latlng.lng.toFixed(6); picked.value = true
     if (marker) marker.setLatLng(e.latlng); else marker = L.marker(e.latlng).addTo(map)
+    fillAddress(f.lat, f.lng)
   })
   setTimeout(() => map.invalidateSize(), 50)
 })
 onBeforeUnmount(() => map?.remove())
+async function fillAddress(lat: number, lng: number) {
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=uz&lat=${lat}&lon=${lng}`)
+    const d = await r.json()
+    const a = d.address || {}
+    const street = [a.road, a.house_number].filter(Boolean).join(' ')
+    const text = street ? [street, a.suburb || a.city_district || a.city || a.town].filter(Boolean).join(', ') : d.display_name
+    if (text) f.address = text
+  } catch { /* manzilni qo'lda kiritish mumkin */ }
+}
 const ALNUM = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 function genKey() {
   const b = new Uint32Array(32); crypto.getRandomValues(b)
@@ -34,10 +45,9 @@ async function go() {
   if (!f.name.trim() || !f.address.trim()) { err.value = 'Nom va manzilni kiriting'; return }
   const key = f.api_key.trim()
   if (key && !/^yl_live_[A-Za-z0-9]{32}$/.test(key)) { err.value = "API kalit formati: yl_live_ + 32 ta harf/raqam"; return }
-  const [integration_type, pos_system] = f.integration === 'API' ? ['API', undefined] : f.integration === 'Planshet' ? ['Planshet', "Yo'lda planshet"] : ['POS', f.integration.replace('POS ', '')]
   busy.value = true
   try {
-    res.value = await post('/restaurants', { name: f.name.trim(), cuisine: f.cuisine, district: f.district, address: f.address, lat: f.lat, lng: f.lng, integration_type, pos_system, phone: f.phone || undefined, webhook_url: f.webhook_url || undefined, api_key: key || undefined })
+    res.value = await post('/restaurants', { name: f.name.trim(), cuisine: f.cuisine, address: f.address, lat: f.lat, lng: f.lng, phone: f.phone || undefined, webhook_url: f.webhook_url || undefined, api_key: key || undefined })
     ui.toast(`${f.name} ulandi`, 'var(--violet)'); emit('done')
     if (!res.value.api_key && !res.value.webhook_secret) emit('close')
   } catch (e) { err.value = errMsg(e) } finally { busy.value = false }
@@ -49,10 +59,8 @@ async function go() {
     <div class="form-grid">
       <div class="field full"><label>Restoran nomi</label><input v-model="f.name" class="inp" /></div>
       <div class="field"><label>Oshxona turi</label><select v-model="f.cuisine" class="inp"><option v-for="c in CUISINES" :key="c">{{ c }}</option></select></div>
-      <div class="field"><label>Tuman</label><select v-model="f.district" class="inp"><option v-for="c in DISTRICTS" :key="c">{{ c }}</option></select></div>
       <div class="field full"><label>Manzil</label><input v-model="f.address" class="inp" /></div>
       <div class="field full"><label>Xaritadan nuqta tanlang {{ picked ? `(${f.lat}, ${f.lng})` : '' }}</label><div ref="mapEl" class="mm" /></div>
-      <div class="field"><label>Integratsiya</label><select v-model="f.integration" class="inp"><option>API</option><option>POS iiko</option><option>POS R-Keeper</option><option>Planshet</option></select></div>
       <div class="field"><label>Telefon</label><input v-model="f.phone" class="inp" /></div>
       <div class="field full"><label>Restoran API kaliti</label>
         <div class="row" style="gap:6px"><input v-model="f.api_key" class="inp" style="flex:1" placeholder="yl_live_… — «Yaratish» tugmasini bosing" />
