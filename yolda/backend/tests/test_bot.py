@@ -21,12 +21,12 @@ async def test_bot_key_required(client, monkeypatch):
 
 async def test_link_and_token(client, db):
     c = await make_courier(db)
-    bad = await client.post("/api/bot/link", json={"telegram_id": 5, "phone": "+998" + c.phone, "pinfl": "0" * 14}, headers=BOT)
+    bad = await client.post("/api/bot/link", json={"telegram_id": 5, "phone": "+998901234567"}, headers=BOT)
     assert bad.status_code == 401
-    ok = await client.post("/api/bot/link", json={"telegram_id": 5, "phone": "+998 " + c.phone, "pinfl": c.pinfl}, headers=BOT)
+    ok = await client.post("/api/bot/link", json={"telegram_id": 5, "phone": "+998 " + c.phone}, headers=BOT)
     assert ok.status_code == 200 and ok.json()["courier"]["id"] == c.id
     # boshqa Telegram akkaunt bu kuryerni ololmaydi
-    other = await client.post("/api/bot/link", json={"telegram_id": 6, "phone": c.phone, "pinfl": c.pinfl}, headers=BOT)
+    other = await client.post("/api/bot/link", json={"telegram_id": 6, "phone": c.phone}, headers=BOT)
     assert other.status_code == 409
     t = await client.post("/api/bot/token", json={"telegram_id": 5}, headers=BOT)
     assert t.status_code == 200
@@ -38,9 +38,9 @@ async def test_link_and_token(client, db):
 async def test_link_rate_limit(client, db):
     c = await make_courier(db)
     for _ in range(5):
-        r = await client.post("/api/bot/link", json={"telegram_id": 77, "phone": c.phone, "pinfl": "1" * 14}, headers=BOT)
+        r = await client.post("/api/bot/link", json={"telegram_id": 77, "phone": "000000000"}, headers=BOT)
         assert r.status_code == 401
-    r = await client.post("/api/bot/link", json={"telegram_id": 77, "phone": c.phone, "pinfl": c.pinfl}, headers=BOT)
+    r = await client.post("/api/bot/link", json={"telegram_id": 77, "phone": c.phone}, headers=BOT)
     assert r.status_code == 429
 
 

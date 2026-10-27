@@ -28,7 +28,7 @@ async function call(path, { method = 'GET', body, headers = {} } = {}) {
 const bot = (path, opts = {}) => call(`/api/bot${path}`, { ...opts, headers: { 'x-bot-key': config.botApiKey } });
 
 // ---- bot servisi endpointlari ----
-export const link = (telegram_id, phone, pinfl) => bot('/link', { method: 'POST', body: { telegram_id, phone, pinfl } });
+export const link = (telegram_id, phone) => bot('/link', { method: 'POST', body: { telegram_id, phone } });
 export const states = () => bot('/state').then((r) => r.couriers);
 export const stateOf = (telegram_id) => bot(`/state?telegram_id=${telegram_id}`).then((r) => r.couriers[0] || null);
 export const orderInfo = (id) => bot(`/orders/${id}`);

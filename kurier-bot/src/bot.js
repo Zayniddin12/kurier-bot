@@ -170,9 +170,7 @@ export async function syncAll() {
   );
 }
 
-// ---------- Ro'yxatdan o'tish: telefon → JShShIR ----------
-const awaitingPinfl = new Map(); // telegram id -> telefon
-
+// ---------- Ro'yxatdan o'tish: telefon (Telegram kontakti) ----------
 bot.command('start', async (ctx) => {
   if (ctx.chat.type !== 'private') return;
   try {
@@ -188,8 +186,12 @@ bot.command('start', async (ctx) => {
 bot.on('message:contact', async (ctx) => {
   if (ctx.chat.type !== 'private') return;
   if (ctx.message.contact.user_id !== ctx.from.id) return ctx.reply('Iltimos, o‘zingizning raqamingizni yuboring.');
-  awaitingPinfl.set(ctx.from.id, ctx.message.contact.phone_number);
-  await ctx.reply('Endi JShShIR (PINFL) ingizni yuboring — 14 ta raqam.', { reply_markup: { remove_keyboard: true } });
+  try {
+    const r = await yolda.link(ctx.from.id, ctx.message.contact.phone_number);
+    await ctx.reply(`✅ Ro‘yxatdan o‘tdingiz, ${r.courier.name}!\n\nSmenani boshlang va lokatsiya yuboring — zakazlar shu yerga keladi.`, { reply_markup: menu() });
+  } catch (e) {
+    await ctx.reply(`❌ ${errText(e)}\n\nQayta urinish uchun /start bosing.`, { reply_markup: { remove_keyboard: true } });
+  }
 });
 
 // ---------- Menyu ----------
@@ -253,27 +255,6 @@ bot.hears(BTN.bal, async (ctx) => {
       html,
     );
   } catch (e) {
-    await ctx.reply(`⚠️ ${errText(e)}`);
-  }
-});
-
-// PINFL kutilayotgan bo'lsa — matn shu uchun
-bot.on('message:text', async (ctx) => {
-  if (ctx.chat.type !== 'private') return;
-  const phone = awaitingPinfl.get(ctx.from.id);
-  if (!phone) return;
-  const pinfl = ctx.message.text.replace(/\s/g, '');
-  if (!/^\d{14}$/.test(pinfl)) return ctx.reply('JShShIR 14 ta raqamdan iborat. Qayta yuboring.');
-  try {
-    const r = await yolda.link(ctx.from.id, phone, pinfl);
-    awaitingPinfl.delete(ctx.from.id);
-    await ctx.deleteMessage().catch(() => {}); // JShShIR chatda qolmasin
-    await ctx.reply(`✅ Ro‘yxatdan o‘tdingiz, ${r.courier.name}!\n\nSmenani boshlang va lokatsiya yuboring — zakazlar shu yerga keladi.`, { reply_markup: menu() });
-  } catch (e) {
-    if (e.status === 401) {
-      awaitingPinfl.delete(ctx.from.id);
-      return ctx.reply(`❌ ${errText(e)}\n\nQayta urinish uchun /start bosing.`);
-    }
     await ctx.reply(`⚠️ ${errText(e)}`);
   }
 });

@@ -41,7 +41,6 @@ router = APIRouter(prefix="/api/bot", tags=["bot"], dependencies=[Depends(bot_au
 class LinkIn(BaseModel):
     telegram_id: int
     phone: str
-    pinfl: str
 
 
 class TokenIn(BaseModel):
@@ -50,7 +49,7 @@ class TokenIn(BaseModel):
 
 @router.post("/link")
 async def link(body: LinkIn, db: AsyncSession = Depends(get_db)):
-    """Kuryerni Telegram akkauntiga bog'lash: telefon + JShShIR admin panelda kiritilganiga mos bo'lishi shart."""
+    """Kuryerni Telegram akkauntiga bog'lash: telefon admin panelda kiritilganiga mos bo'lishi shart (bot raqamni Telegram kontaktidan oladi)."""
     now = time.monotonic()
     q = _attempts[body.telegram_id]
     while q and now - q[0] > LINK_WINDOW:
@@ -60,9 +59,12 @@ async def link(body: LinkIn, db: AsyncSession = Depends(get_db)):
     q.append(now)
 
     ph = re.sub(r"\D", "", body.phone)[-9:]
-    c = (await db.execute(select(Courier).where(Courier.phone == ph, Courier.pinfl == body.pinfl.strip()))).scalar_one_or_none()
-    if not c:
-        raise ApiError(401, "Telefon yoki JShShIR noto'g'ri. Kuryer admin panelda ro'yxatdan o'tgan bo'lishi kerak")
+    found = (await db.execute(select(Courier).where(Courier.phone == ph))).scalars().all() if len(ph) == 9 else []
+    if not found:
+        raise ApiError(401, "Bu raqam topilmadi. Kuryer admin panelda ro'yxatdan o'tgan bo'lishi kerak")
+    if len(found) > 1:
+        raise ApiError(409, "Bu raqam bilan bir nechta kuryer bor. Admin bilan bog'laning")
+    c = found[0]
     if c.account_status != "active":
         raise ApiError(403, "Akkaunt bloklangan. Admin bilan bog'laning")
     if c.telegram_id is not None and c.telegram_id != body.telegram_id:
