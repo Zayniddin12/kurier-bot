@@ -2,7 +2,7 @@ import re
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import ISSUES, LEDGER_TYPES, TRANSPORTS, settings
@@ -183,6 +183,23 @@ async def unlink_telegram(cid: int, u: User = Depends(ops_user), db: AsyncSessio
     c.telegram_id = None
     await commit(db)
     return await row_for(db, c)
+
+
+@router.delete("/couriers/{cid}")
+async def delete_courier(cid: int, u: User = Depends(ops_user), db: AsyncSession = Depends(get_db)):
+    c = await get_courier(db, cid)
+    active = (await db.execute(select(func.count()).select_from(Order).where(
+        Order.courier_id == c.id, Order.status.in_(("assigned", "onway"))))).scalar_one()
+    if c.current_order_id or active:
+        raise ApiError(409, "Kuryerda faol buyurtma bor — avval yakunlansin")
+    await dispatch.expire_courier_offers(db, c)
+    # Buyurtmalar tarixi qoladi (kuryersiz), kuryerga bog'liq yozuvlar o'chiriladi
+    await db.execute(update(Order).where(Order.courier_id == c.id).values(courier_id=None))
+    for m in (OrderOffer, OrderIssue, LedgerEntry):
+        await db.execute(delete(m).where(m.courier_id == c.id))
+    await db.delete(c)
+    await commit(db)
+    return {"ok": True}
 
 
 @router.post("/couriers/{cid}/block")

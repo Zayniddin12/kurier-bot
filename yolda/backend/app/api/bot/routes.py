@@ -67,8 +67,8 @@ async def link(body: LinkIn, db: AsyncSession = Depends(get_db)):
     c = found[0]
     if c.account_status != "active":
         raise ApiError(403, "Akkaunt bloklangan. Admin bilan bog'laning")
-    if c.telegram_id is not None and c.telegram_id != body.telegram_id:
-        raise ApiError(409, "Bu kuryer boshqa Telegram akkauntga ulangan. Admin bilan bog'laning")
+    # Telefon Telegram kontaktidan (bot user_id == from.id ni tekshiradi) kelgani uchun ishonchli:
+    # kuryer akkauntini yo'qotib yangisidan kirsa, eski ulanish almashtiriladi.
     other = (await db.execute(select(Courier).where(Courier.telegram_id == body.telegram_id))).scalar_one_or_none()
     if other and other.id != c.id:
         raise ApiError(409, "Bu Telegram akkaunt boshqa kuryerga ulangan")

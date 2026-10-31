@@ -27,4 +27,5 @@ export const errMsg = (e: any): string => {
 
 export const get = <T = any>(url: string, params?: any) => api.get<T>(url, { params }).then((r) => r.data)
 export const post = <T = any>(url: string, body?: any) => api.post<T>(url, body).then((r) => r.data)
+export const del = <T = any>(url: string) => api.delete<T>(url).then((r) => r.data)
 export const patch = <T = any>(url: string, body?: any) => api.patch<T>(url, body).then((r) => r.data)

@@ -25,10 +25,11 @@ async def test_link_and_token(client, db):
     assert bad.status_code == 401
     ok = await client.post("/api/bot/link", json={"telegram_id": 5, "phone": "+998 " + c.phone}, headers=BOT)
     assert ok.status_code == 200 and ok.json()["courier"]["id"] == c.id
-    # boshqa Telegram akkaunt bu kuryerni ololmaydi
-    other = await client.post("/api/bot/link", json={"telegram_id": 6, "phone": c.phone}, headers=BOT)
-    assert other.status_code == 409
-    t = await client.post("/api/bot/token", json={"telegram_id": 5}, headers=BOT)
+    # Telegram o'chib ketsa, yangi akkaunt shu telefon bilan qayta ulanadi (eskisi ishlamay qoladi)
+    again = await client.post("/api/bot/link", json={"telegram_id": 6, "phone": c.phone}, headers=BOT)
+    assert again.status_code == 200
+    assert (await client.post("/api/bot/token", json={"telegram_id": 5}, headers=BOT)).status_code == 404
+    t = await client.post("/api/bot/token", json={"telegram_id": 6}, headers=BOT)
     assert t.status_code == 200
     me = await client.post("/api/courier/shift/start", headers={"Authorization": "Bearer " + t.json()["access_token"]})
     assert me.status_code == 200

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { get, post, errMsg } from '@/api/client'
+import { get, post, del, errMsg } from '@/api/client'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { useDrawer } from '@/utils/drawer'
@@ -32,6 +32,10 @@ async function block() {
 async function unlink() {
   if (!confirm('Telegram bog\'lanishi uziladi: kuryer botda qayta ro\'yxatdan o\'tishi kerak. Davom etasizmi?')) return
   try { await post(`/couriers/${p.id}/unlink-telegram`); ui.toast('Telegram uzildi'); reload(true) } catch (e) { ui.toast(errMsg(e), 'var(--red)') }
+}
+async function remove() {
+  if (!confirm(`${c.value.full_name} butunlay o'chiriladi (balans tarixi ham). Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`)) return
+  try { await del(`/couriers/${p.id}`); ui.toast(`${c.value.full_name} o'chirildi`, 'var(--red)'); drawer.close() } catch (e) { ui.toast(errMsg(e), 'var(--red)') }
 }
 function onMap() { ui.mapFocus = { courierId: p.id }; router.push('/map') }
 const stateBox = computed(() => {
@@ -123,7 +127,7 @@ const stateBox = computed(() => {
         <dt>Telegram bot</dt><dd><Pill :tone="c.telegram_linked ? 'teal' : 'amber'">{{ c.telegram_linked ? 'Ulangan' : 'Ulanmagan' }}</Pill>
           <Btn v-if="c.telegram_linked && !auth.isStaff" sm style="margin-left:8px" @click="unlink">Uzish</Btn></dd>
       </dl>
-      <div v-if="!c.telegram_linked" class="sub" style="margin-top:6px">Kuryer botga /start yozib, telefon va JShShIR bilan ulanadi — shundan keyin buyurtmalar Telegramga keladi.</div>
+      <div v-if="!c.telegram_linked" class="sub" style="margin-top:6px">Kuryer botga /start yozib, telefon raqami (Telegram kontakti) bilan ulanadi — shundan keyin buyurtmalar Telegramga keladi.</div>
     </template>
     <template #footer>
       <template v-if="d">
@@ -132,6 +136,7 @@ const stateBox = computed(() => {
         <Btn icon="pin" @click="onMap">Xaritada</Btn>
         <span class="sp" />
         <Btn v-if="!auth.isStaff" variant="danger" @click="block">{{ c.account_status === 'blocked' ? 'Blokdan chiqarish' : 'Bloklash' }}</Btn>
+        <Btn v-if="!auth.isStaff" variant="danger" @click="remove">O'chirish</Btn>
       </template>
     </template>
     <TopupModal v-if="topup" :courier-id="id" @close="topup = false" @done="reload(true)" />
