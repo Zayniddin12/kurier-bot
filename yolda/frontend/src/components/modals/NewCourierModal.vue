@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { post, errMsg } from '@/api/client'
 import { useUiStore } from '@/stores/ui'
 const emit = defineEmits<{ close: []; done: [] }>()
@@ -10,6 +10,9 @@ const f = reactive({
   first_name: '', last_name: '', phone: '', birth_date: '', pinfl: '', license_no: '', vehicle_doc: '',
   vehicle: 'Skuter', plate: '', car_model: '', status: 'active', city: '', shift: '09:00–21:00',
 })
+const hasPlate = computed(() => f.vehicle === 'Avto' || f.vehicle === 'Skuter')
+const hasModel = computed(() => f.vehicle === 'Avto')
+watch(() => f.vehicle, () => { if (!hasPlate.value) f.plate = ''; if (!hasModel.value) f.car_model = '' })
 const errs = reactive<Record<string, string>>({})
 const busy = ref(false)
 async function go() {
@@ -26,7 +29,7 @@ async function go() {
   try {
     await post('/couriers', {
       ...f, first_name: f.first_name.trim(), last_name: f.last_name.trim(), phone, birth_date: f.birth_date,
-      plate: f.plate.replace(/\s/g, ''),
+      plate: hasPlate.value ? f.plate.replace(/\s/g, '') : '', car_model: hasModel.value ? f.car_model.trim() : '',
     })
     ui.toast(`${f.first_name} ${f.last_name} qo'shildi · ilovaga kirganda liniyaga chiqadi`); emit('done'); emit('close')
   } catch (e) {
@@ -36,7 +39,7 @@ async function go() {
 }
 </script>
 <template>
-  <Modal wide title="Yangi kuryer qo'shish" @close="emit('close')">
+  <Modal screen title="Yangi kuryer qo'shish" @close="emit('close')">
     <div class="cards">
       <section class="card">
         <header><i class="ic violet"><Icon name="user" :size="18" /></i><div><h4>Shaxsiy ma'lumotlar</h4><p>Ism, kontaktlar va tug'ilgan sana</p></div></header>
@@ -65,8 +68,8 @@ async function go() {
         <div class="field"><label>Transport turi</label>
           <div class="chips"><button v-for="t in VEHICLES" :key="t.v" type="button" :class="{ on: f.vehicle === t.v }" @click="f.vehicle = t.v">{{ t.l }}</button></div></div>
         <div class="grid" style="margin-top:14px">
-          <div class="field"><label>Davlat raqami</label><input v-model="f.plate" class="inp lg" placeholder="01A123BC" maxlength="10" /><span class="hint">8 ta belgi, bo'sh joysiz</span></div>
-          <div class="field"><label>Mashina modeli</label><input v-model="f.car_model" class="inp lg" placeholder="Chevrolet Cobalt" /></div>
+          <div class="field"><label>Davlat raqami</label><input v-model="f.plate" class="inp lg" :disabled="!hasPlate" placeholder="01A123BC" maxlength="10" /><span class="hint">8 ta belgi, bo'sh joysiz</span></div>
+          <div class="field"><label>Mashina modeli</label><input v-model="f.car_model" class="inp lg" :disabled="!hasModel" placeholder="Chevrolet Cobalt" /></div>
         </div>
       </section>
 
@@ -90,7 +93,7 @@ async function go() {
   </Modal>
 </template>
 <style scoped>
-.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.cards{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:14px;align-items:stretch}
 .card{background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:16px;box-shadow:0 1px 2px rgba(22,32,26,.05)}
 .card>header{display:flex;gap:11px;align-items:center;padding:0 0 12px;margin-bottom:14px;border-bottom:1px solid var(--line-2)}
 .card h4{font-size:14.5px;font-weight:700}.card p{font-size:12px;color:var(--muted);margin-top:1px}
@@ -105,6 +108,7 @@ async function go() {
 .phone span{display:grid;place-items:center;padding:0 12px;background:var(--surface-2);color:var(--muted);font-size:13px;font-weight:600;border-right:1px solid var(--line)}
 .phone input{flex:1;min-width:0;border:0;outline:0;padding:0 11px;font-size:13px;background:transparent}
 .phone:focus-within,.inp:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.inp:disabled{background:var(--surface-2);color:var(--faint);cursor:not-allowed}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer}
 .chips button.on{background:var(--brand-soft);border-color:var(--brand);color:var(--ink);font-weight:600}

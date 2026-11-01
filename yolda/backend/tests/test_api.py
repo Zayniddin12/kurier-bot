@@ -119,3 +119,24 @@ async def test_salary_settle_and_cancel_refund(client, db):
     assert item["payable"] == 100_000
     st = await client.post(f"/api/admin/couriers/{c.id}/settle", headers=ho)
     assert st.json()["paid"] == 100_000 and st.json()["courier"]["balance"] == 0
+
+
+async def test_create_courier_saves_all_fields(client, db):
+    await make_user(db, "op@x.uz", "operator")
+    h = await login(client, "op@x.uz")
+    full = {"first_name": "Ali", "last_name": "Vali", "phone": "90 123 45 67", "pinfl": "12345678901234",
+            "birth_date": "1995-03-21", "license_no": "AB 1234567", "vehicle_doc": "AAF 1234567", "vehicle": "Avto",
+            "plate": "01a123bc", "car_model": "Chevrolet Cobalt", "status": "blocked", "city": "Toshkent",
+            "shift": "10:00–22:00"}
+    r = await client.post("/api/admin/couriers", json=full, headers=h)
+    assert r.status_code == 201
+    c = (await client.get(f"/api/admin/couriers/{r.json()['id']}", headers=h)).json()["courier"]
+    assert (c["birth_date"], c["license_no"], c["vehicle_doc"], c["vehicle"], c["plate"], c["car_model"],
+            c["account_status"], c["city"], c["shift"], c["phone"], c["pinfl"]) == (
+        "1995-03-21", "AB 1234567", "AAF 1234567", "Avto", "01A123BC", "Chevrolet Cobalt",
+        "blocked", "Toshkent", "10:00–22:00", "901234567", "12345678901234")
+    # skuterda mashina modeli saqlanmaydi, velosipedda davlat raqami ham
+    s = await client.post("/api/admin/couriers", json={**full, "pinfl": "12345678901235", "vehicle": "Skuter"}, headers=h)
+    assert s.json()["plate"] == "01A123BC" and s.json()["car_model"] is None
+    v = await client.post("/api/admin/couriers", json={**full, "pinfl": "12345678901236", "vehicle": "Velo"}, headers=h)
+    assert v.json()["plate"] == "—" and v.json()["car_model"] is None

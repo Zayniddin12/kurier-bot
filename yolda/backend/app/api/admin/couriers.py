@@ -155,10 +155,10 @@ async def create_courier(body: CourierIn, u: User = Depends(ops_user), db: Async
         raise ApiError(422, "Status noto'g'ri", "status")
     num = ((await db.execute(select(func.max(Courier.number)))).scalar() or 179) + 1
     c = Courier(number=num, first_name=fn, last_name=ln, phone=ph, pinfl=pf, vehicle=body.vehicle,
-                plate=body.plate.strip().upper() or "—", shift=body.shift, rating=5.0, balance=0,
+                plate=(body.plate.strip().upper() if body.vehicle in ("Avto", "Skuter") else "") or "—", shift=body.shift, rating=5.0, balance=0,
                 account_status=body.status, work_status="offline",
                 birth_date=body.birth_date, license_no=body.license_no.strip() or None,
-                vehicle_doc=body.vehicle_doc.strip() or None, car_model=body.car_model.strip() or None,
+                vehicle_doc=body.vehicle_doc.strip() or None, car_model=(body.car_model.strip() if body.vehicle == "Avto" else "") or None,
                 city=body.city.strip() or None,
                 avatar_seed=num * 7 + len(fn), is_female=False)
     db.add(c)
