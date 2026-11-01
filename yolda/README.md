@@ -83,7 +83,7 @@ transport nosozligi, maosh, idempotentlik, webhook imzosi, restaurant_staff izol
 - Admin API javob shakllari: [`backend/docs/ADMIN_API_SHAPES.md`](backend/docs/ADMIN_API_SHAPES.md).
 
 ## Sozlamalar (`backend/.env`)
-`DATABASE_URL`, `SECRET_KEY`, `BOT_API_KEY`, `CORS_ORIGINS`, `DEMO_SIMULATION`, `RUN_WORKERS` (dispatcher/webhook loop'larni o'chirish — faqat testlar uchun).
+`DATABASE_URL`, `SECRET_KEY`, `BOT_API_KEY`, `OSRM_URL` (yo'l marshruti serveri; bo'sh = to'g'ri chiziq), `CORS_ORIGINS`, `DEMO_SIMULATION`, `RUN_WORKERS` (dispatcher/webhook loop'larni o'chirish — faqat testlar uchun).
 Biznes konstantalari (SLA 45, CASH_LIMIT 400 000, COMMISSION 0.15, BONUS_PER_10 20 000, LATE_FINE 5 000) — `backend/app/config.py`.
 
 ## Telegram bot (`../kurier-bot`)

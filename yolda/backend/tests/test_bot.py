@@ -113,3 +113,72 @@ async def test_unlink_telegram(client, db):
     c = await make_courier(db, telegram_id=9)
     r = await client.post(f"/api/admin/couriers/{c.id}/unlink-telegram", headers=h)
     assert r.status_code == 200 and r.json()["telegram_linked"] is False
+
+
+async def test_route_and_customer_location_change(client, db, monkeypatch):
+    from app.services import routing
+    from tests.conftest import login, make_user
+    monkeypatch.setattr(settings, "OSRM_URL", "")          # tarmoqsiz: to'g'ri chiziq (fallback)
+    routing._cache.clear()
+    rest = await make_restaurant(db)
+    c = await make_courier(db, telegram_id=556, lat=41.355, lng=69.285)
+    h = {"Authorization": f"Bearer {rest.key}"}
+    r = await client.post("/api/v1/orders", json=order_body("L-1", method="Naqd"), headers=h)
+    oid = r.json()["id"]
+    await dispatch.dispatch_cycle(db)
+    await db.commit()
+    tok = (await client.post("/api/bot/token", json={"telegram_id": 556}, headers=BOT)).json()["access_token"]
+    ch = {"Authorization": "Bearer " + tok}
+    of = (await client.get("/api/bot/state", params={"telegram_id": 556}, headers=BOT)).json()["couriers"][0]["offer"]
+    await client.post(f"/api/courier/offers/{of['id']}/accept", headers=ch)
+
+    await make_user(db, "op@x.uz", "operator")
+    ah = await login(client, "op@x.uz")
+    rt = (await client.get(f"/api/admin/map/route/{c.id}", headers=ah)).json()
+    assert rt["stage"] == "pickup" and [g["to"] for g in rt["legs"]] == ["restaurant", "customer"]
+    assert rt["distance_m"] > 0 and rt["duration_s"] > 0 and rt["approx"] is True
+    assert rt["legs"][0]["geometry"][0] == [41.355, 69.285]
+
+    # ovqat olinmagan: manzil o'zgaradi, botdagi buyurtma yangi koordinata va manzilni ko'rsatadi
+    ok = await client.patch(f"/api/admin/orders/{oid}/location", json={"lat": 41.40, "lng": 69.33, "address": "Yangi ko'cha 5"}, headers=ah)
+    assert ok.status_code == 200 and ok.json()["lat"] == 41.40 and ok.json()["address"] == "Yangi ko'cha 5"
+    st = (await client.get("/api/bot/state", params={"telegram_id": 556}, headers=BOT)).json()["couriers"][0]["order"]
+    assert st["status"] == "assigned" and st["customer"]["lat"] == 41.40 and st["customer"]["address"] == "Yangi ko'cha 5"
+
+    await client.post(f"/api/courier/orders/{oid}/picked-up", headers=ch)
+    rt = (await client.get(f"/api/admin/map/route/{c.id}", headers=ah)).json()
+    assert rt["stage"] == "delivering" and [g["to"] for g in rt["legs"]] == ["customer"]
+    await client.patch(f"/api/admin/orders/{oid}/location", json={"lat": 41.41, "lng": 69.34}, headers=ah)
+    st = (await client.get("/api/bot/state", params={"telegram_id": 556}, headers=BOT)).json()["couriers"][0]["order"]
+    assert st["status"] == "onway" and (st["customer"]["lat"], st["customer"]["lng"]) == (41.41, 69.34)
+
+    bad = await client.patch(f"/api/admin/orders/{oid}/location", json={"lat": 100, "lng": 69.3}, headers=ah)
+    assert bad.status_code == 422
+    await client.post(f"/api/courier/orders/{oid}/delivered", headers=ch)
+    done = await client.patch(f"/api/admin/orders/{oid}/location", json={"lat": 41.4, "lng": 69.3}, headers=ah)
+    assert done.status_code == 409
+
+
+async def test_osrm_route_parsing_and_fallback(monkeypatch):
+    from app.services import routing
+
+    class Resp:
+        def __init__(self, ok): self.ok = ok
+        def raise_for_status(self):
+            if not self.ok: raise RuntimeError("503")
+        def json(self):
+            return {"routes": [{"distance": 1234.4, "geometry": {"coordinates": [[69.29, 41.36], [69.30, 41.37]]}}]}
+
+    class Client:
+        ok = True
+        async def get(self, *a, **k): return Resp(Client.ok)
+
+    monkeypatch.setattr(settings, "OSRM_URL", "http://osrm")
+    monkeypatch.setattr(routing, "_client", Client())
+    routing._cache.clear()
+    g = await routing.leg((41.36, 69.29), (41.37, 69.30))
+    assert g["distance_m"] == 1234 and g["approx"] is False and g["geometry"][0] == [41.36, 69.29]
+    Client.ok = False                                           # OSRM ishlamasa — to'g'ri chiziq
+    routing._cache.clear()
+    g = await routing.leg((41.36, 69.29), (41.37, 69.30))
+    assert g["approx"] is True and g["distance_m"] > 1000

@@ -88,6 +88,9 @@ async function sendCustomer(chat, o) {
   await sendPlace(chat, o.customer, 'Manzil', o.customer.address);
 }
 
+// Mijoz manzili (koordinata + matn) o'zgarganini bilish uchun
+const custKey = (c) => `${c.lat ?? ''},${c.lng ?? ''}|${c.address || ''}`;
+
 // ---------- Yolda holatini Telegramga moslash ----------
 const locks = new Map();
 const locked = (tg, fn) => {
@@ -136,15 +139,30 @@ async function reconcile(s, at) {
       const m = await send(tg, `✅ Zakaz #${order.id} sizga biriktirildi.\n\n${orderText(order, { reveal: order.status === 'onway' })}`, {
         reply_markup: stepKb(order),
       });
-      Object.assign(r, { orderId: order.id, orderStatus: order.status, cardMsg: m?.message_id });
+      Object.assign(r, { orderId: order.id, orderStatus: order.status, cardMsg: m?.message_id, custKey: custKey(order.customer) });
       rec.set(tg, r);
       if (order.status === 'assigned') await sendPlace(tg, order.restaurant, 'Restoran manzili', order.restaurant.address);
       else await sendCustomer(tg, order);
     } else if (r.orderStatus !== order.status) {
       await edit(tg, r.cardMsg, orderText(order, { reveal: order.status === 'onway' }), { reply_markup: stepKb(order) });
       r.orderStatus = order.status;
+      r.custKey = custKey(order.customer);
       rec.set(tg, r);
       if (order.status === 'onway') await sendCustomer(tg, order);
+    } else if (r.custKey === undefined) {
+      // eski yozuv (yangilashdan oldin): hozirgi manzilni bilamiz, xabar yubormaymiz
+      r.custKey = custKey(order.customer);
+      rec.set(tg, r);
+    } else if (r.custKey !== custKey(order.customer)) {
+      // operator mijoz manzilini o'zgartirdi
+      r.custKey = custKey(order.customer);
+      rec.set(tg, r);
+      await edit(tg, r.cardMsg, orderText(order, { reveal: order.status === 'onway' }), { reply_markup: stepKb(order) });
+      if (order.status === 'onway') {
+        // ovqat olingan: yangi lokatsiya va manzilni qayta yuboramiz
+        await send(tg, `📍 <b>Zakaz #${order.id}: mijoz manzili o‘zgardi!</b>\n🏠 ${esc(order.customer.address || '—')}\n\nYangi lokatsiya pastda 👇`);
+        await sendCustomer(tg, order);
+      }
     }
   } else if (r.orderId) {
     await closeOrder(tg, r, s);

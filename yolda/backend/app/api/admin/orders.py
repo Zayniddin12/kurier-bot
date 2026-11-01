@@ -8,11 +8,13 @@ from app.db import get_db
 from app.deps import current_user, scope_rid
 from app.errors import ApiError
 from app.models import Courier, Order, Restaurant, User
-from app.schemas.admin import CancelIn
+from app.schemas.admin import CancelIn, OrderLocationIn
 from app.services import dispatch, stats
 from app.services.details import order_detail
-from app.services.events import commit, flush_events
-from app.services.orders import OrderError, cancel_order
+from app.services.events import commit, esc, feed, flush_events
+from app.services.geo import road_km
+from app.services.live import courier_changed
+from app.services.orders import OrderError, cancel_order, order_changed
 from app.services.serializers import order_row
 
 router = APIRouter(tags=["orders"])
@@ -106,3 +108,24 @@ async def reassign(oid: int, u: User = Depends(current_user), db: AsyncSession =
 async def notify(oid: int, u: User = Depends(current_user), db: AsyncSession = Depends(get_db)):
     await load_order(db, u, oid)
     return {"ok": True}
+
+
+@router.patch("/orders/{oid}/location")
+async def change_location(oid: int, body: OrderLocationIn, u: User = Depends(current_user),
+                          db: AsyncSession = Depends(get_db)):
+    """Mijoz lokatsiyasini o'zgartirish. Kuryer ovqatni olgan bo'lsa, bot yangi manzilni Telegramga qayta yuboradi."""
+    o = await load_order(db, u, oid)
+    if o.status not in ("new", "assigned", "onway"):
+        raise ApiError(409, "Yakunlangan buyurtma manzilini o'zgartirib bo'lmaydi")
+    r = await db.get(Restaurant, o.restaurant_id)
+    o.lat, o.lng = round(body.lat, 6), round(body.lng, 6)
+    if body.address is not None and body.address.strip():
+        o.address = body.address.strip()
+    o.distance_km = road_km(r.lat, r.lng, o.lat, o.lng)  # to'lov (delivery_fee) o'zgarmaydi
+    await feed(db, f"Mijoz manzili o'zgardi: <b>#{o.id}</b> · {esc(o.address)}", "blue", r.id)
+    await order_changed(db, o, r)
+    if o.courier_id:
+        c = await db.get(Courier, o.courier_id)
+        await courier_changed(db, c)
+    await commit(db)
+    return await order_detail(db, o)

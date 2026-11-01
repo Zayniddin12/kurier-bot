@@ -84,3 +84,9 @@ class RestaurantPatch(BaseModel):
 
 class PauseIn(BaseModel):
     reason: str = ""
+
+
+class OrderLocationIn(BaseModel):
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+    address: str | None = Field(default=None, max_length=400)

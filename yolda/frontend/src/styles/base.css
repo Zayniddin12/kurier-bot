@@ -44,3 +44,8 @@ h1,h2,h3,h4,p{margin:0}
 .inp,select.inp,input.inp{height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);padding:0 11px;font-size:13px;min-width:0}
 textarea.inp{height:auto;padding:8px 11px}
 .inp.lg{height:40px}
+.hm-wrap{background:none!important;border:0!important}
+.hm{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#16201A;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+.hm svg{transform:rotate(45deg)}
+.hm.big{width:30px;height:30px;background:var(--brand);border-color:#16201A;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.hm.big svg{stroke:#16201A}

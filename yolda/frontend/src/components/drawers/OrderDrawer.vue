@@ -10,11 +10,12 @@ import IssueBox from '../IssueBox.vue'
 import EtaBox from '../EtaBox.vue'
 import Steps from '../Steps.vue'
 import CancelModal from '../modals/CancelModal.vue'
+import OrderLocationModal from '../modals/OrderLocationModal.vue'
 const p = defineProps<{ id: number }>()
 defineEmits<{ close: [] }>()
 const ui = useUiStore(), router = useRouter(), drawer = useDrawer()
 const { data: o, loading, error, reload } = useLoad<any>(() => get(`/orders/${p.id}`), [() => p.id], ['order.updated', 'issue.opened', 'issue.closed'])
-const cancel = ref(false)
+const cancel = ref(false), locModal = ref(false)
 const active = computed(() => o.value && ['new', 'assigned', 'onway'].includes(o.value.status))
 const pay = computed(() => o.value?.payment)
 async function notify() { try { await post(`/orders/${p.id}/notify-customer`); ui.toast('Mijozga xabar yuborildi') } catch (e) { ui.toast(errMsg(e), 'var(--red)') } }
@@ -92,11 +93,13 @@ const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n)
     <template #footer>
       <template v-if="o">
         <Btn v-if="active" icon="pin" @click="onMap">Xaritada</Btn>
+        <Btn v-if="active" icon="pin" @click="locModal = true">Manzilni o'zgartirish</Btn>
         <Btn icon="msg" @click="notify">Mijozga yozish</Btn>
         <span class="sp" />
         <Btn v-if="active" variant="danger" @click="cancel = true">Bekor qilish</Btn>
       </template>
     </template>
+    <OrderLocationModal v-if="locModal && o" :order="o" @close="locModal = false" @done="reload(true)" />
     <CancelModal v-if="cancel" :order-id="id" @close="cancel = false" @done="reload(true)" />
   </Drawer>
 </template>

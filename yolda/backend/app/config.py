@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     DEMO_SIMULATION: bool = False
     RUN_WORKERS: bool = True
     RATE_LIMIT_PER_MIN: int = 60
+    OSRM_URL: str = "https://router.project-osrm.org"  # marshrut serveri; bo'sh = faqat to'g'ri chiziq
     BOT_API_KEY: str = ""  # Telegram bot servisi shu kalit bilan /api/bot ga murojaat qiladi (bo'sh = o'chiq)
 
     # Biznes konstantalari
