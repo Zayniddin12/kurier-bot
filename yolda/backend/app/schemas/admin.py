@@ -18,6 +18,13 @@ class CourierIn(BaseModel):
     pinfl: str = ""
     vehicle: str = "Skuter"
     shift: str = "09:00–21:00"
+    birth_date: date | None = None
+    license_no: str = ""
+    vehicle_doc: str = ""
+    plate: str = ""
+    car_model: str = ""
+    city: str = ""
+    status: str = "active"
 
 
 class CourierPatch(BaseModel):
@@ -27,6 +34,11 @@ class CourierPatch(BaseModel):
     vehicle: str | None = None
     plate: str | None = None
     shift: str | None = None
+    birth_date: date | None = None
+    license_no: str | None = None
+    vehicle_doc: str | None = None
+    car_model: str | None = None
+    city: str | None = None
 
 
 class LedgerIn(BaseModel):

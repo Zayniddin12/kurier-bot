@@ -1,5 +1,5 @@
-from datetime import datetime
-from sqlalchemy import BigInteger, Boolean, DateTime, Float, Integer, Numeric, String, func
+from datetime import date, datetime
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, Float, Integer, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db import Base
 
@@ -32,3 +32,8 @@ class Courier(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, nullable=True)
     api_token_hash: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    license_no: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    vehicle_doc: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    car_model: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(60), nullable=True)

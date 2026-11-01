@@ -137,6 +137,8 @@ def courier_row(c, today_orders=0, today_amount=0, issue=None, order=None) -> di
         "avatar_seed": c.avatar_seed, "is_female": c.is_female,
         "lat": c.lat, "lng": c.lng, "idle_since": iso(c.idle_since), "online_since": iso(c.online_since),
         "max_km": tr["max_km"] if tr else None, "telegram_linked": c.telegram_id is not None,
+        "birth_date": c.birth_date.isoformat() if c.birth_date else None, "license_no": c.license_no,
+        "vehicle_doc": c.vehicle_doc, "car_model": c.car_model, "city": c.city,
     }
 
 
