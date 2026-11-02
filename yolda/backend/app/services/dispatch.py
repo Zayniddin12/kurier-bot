@@ -129,6 +129,7 @@ async def delivered(db, o: Order, c: Courier):
     if o.pay_method == "Naqd":
         o.pay_status = "collected"
         await ledger.add_entry(db, c, "cash", -o.total, o.id, "Naqd pul mijozdan olindi")
+    db.add_all(ledger.vendor_entries(o, now))
     await feed(db, f"Yetkazildi: <b>#{o.id}</b> · {esc(o.customer_name)}", "grey", o.restaurant_id)
     await order_changed(db, o, status_changed=True)
     await finish_current(db, c)

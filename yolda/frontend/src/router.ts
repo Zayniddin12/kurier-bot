@@ -14,6 +14,8 @@ const router = createRouter({
         { path: 'couriers', component: () => import('@/views/CouriersView.vue'), meta: { title: 'Kuryerlar', sub: "Ro'yxat, balans va ish holati", noStaff: true } },
         { path: 'orders', component: () => import('@/views/OrdersView.vue'), meta: { title: 'Buyurtmalar', sub: 'Kunlik, haftalik va oylik tarix' } },
         { path: 'restaurants', component: () => import('@/views/RestaurantsView.vue'), meta: { title: 'Restoranlar', sub: 'Ulangan hamkorlar' } },
+        { path: 'finance/couriers', component: () => import('@/views/FinanceCouriersView.vue'), meta: { title: 'Haydovchi tranzaksiyalari', sub: "Kuryerlarning kirim-chiqimlari", noStaff: true } },
+        { path: 'finance/vendors', component: () => import('@/views/FinanceVendorsView.vue'), meta: { title: 'Vendor tranzaksiyalari', sub: 'Restoranlar bilan hisob-kitob', noStaff: true } },
         { path: 'analytics', component: () => import('@/views/AnalyticsView.vue'), meta: { title: 'Analitika', sub: "Ko'rsatkichlar dinamikasi" } },
         { path: 'alerts', component: () => import('@/views/AlertsView.vue'), meta: { title: 'Ogohlantirishlar', sub: "Operator e'tiborini talab qiladigan holatlar" } },
       ],

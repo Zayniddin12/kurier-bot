@@ -28,6 +28,11 @@ const nav = computed(() => [
   ...(auth.isStaff ? [] : [{ to: '/couriers', icon: 'bike', label: 'Kuryerlar' }]),
   { to: '/orders', icon: 'orders', label: 'Buyurtmalar' },
   { to: '/restaurants', icon: 'store', label: 'Restoranlar' },
+  ...(auth.isStaff ? [] : [
+    { head: 'Moliya' },
+    { to: '/finance/couriers', icon: 'truck', label: 'Deliverlar' },
+    { to: '/finance/vendors', icon: 'wallet', label: 'Vendorlar' },
+  ]),
   { sep: true },
   { to: '/analytics', icon: 'chart', label: 'Analitika' },
   { to: '/alerts', icon: 'bell', label: 'Ogohlantirishlar', badge: true },
@@ -91,6 +96,7 @@ const time = computed(() => hm(now.value))
       <nav>
         <template v-for="(n, i) in nav" :key="i">
           <hr v-if="n.sep" />
+          <div v-else-if="n.head" class="nh">{{ n.head }}</div>
           <RouterLink v-else :to="{ path: n.to, query: ui.restaurantId && !auth.isStaff ? { r: ui.restaurantId } : {} }" class="nl" :class="{ act: n.to === '/' ? route.path === '/' : route.path.startsWith(n.to) }">
             <Icon :name="n.icon" /><span>{{ n.label }}</span>
             <span class="sp" /><Badge v-if="n.badge" :n="alerts.count" />
@@ -130,6 +136,7 @@ const time = computed(() => hm(now.value))
 .logo{width:34px;height:34px;border-radius:10px;background:var(--brand);color:#16201A;display:flex;align-items:center;justify-content:center}
 .brand b{display:block;font-size:19px;font-weight:800;color:#fff;line-height:1.1}.brand small{font-size:11px;color:var(--side-muted)}
 nav{flex:1;display:flex;flex-direction:column;gap:2px;overflow:auto}
+nav .nh{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--side-muted);padding:12px 10px 4px}
 nav hr{border:0;border-top:1px solid var(--side-active);margin:8px 0;width:100%}
 .nl{position:relative;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:14px;font-weight:500;color:var(--side-ink)}
 .nl:hover,.nl.act{background:var(--side-active)}

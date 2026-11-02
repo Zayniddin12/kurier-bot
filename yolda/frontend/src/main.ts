@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import 'leaflet/dist/leaflet.css'
 import './styles/tokens.css'
 import './styles/base.css'
+import './styles/finance.css'
 import App from './App.vue'
 import router from './router'
 

@@ -13,6 +13,7 @@ from app.db import SessionLocal, engine
 from app.menus import (CANCEL_REASONS, CUSTOMER_NAMES, DISTRICTS, FIRST_NAMES, LAST_NAMES, MENUS, RESTAURANT_MENU,
                        menu_for, pick_items, rand_phone)
 from app.models import (Complaint, Courier, FeedEvent, LedgerEntry, Order, OrderItem, Restaurant, User)
+from app.services.ledger import vendor_entries
 from app.security import hash_password, new_api_key
 from app.services.geo import haversine, road_km
 from app.services.ledger import courier_earning, delivery_fee_for
@@ -60,7 +61,7 @@ def fmt_plate():
 
 
 async def reset(db):
-    await db.execute(text("TRUNCATE webhook_deliveries, dismissed_alerts, complaints, feed_events, ledger_entries, "
+    await db.execute(text("TRUNCATE webhook_deliveries, dismissed_alerts, complaints, feed_events, ledger_entries, vendor_ledger_entries, "
                           "order_issues, order_offers, order_items, orders, couriers, users, restaurants RESTART IDENTITY CASCADE"))
     await db.execute(text("ALTER SEQUENCE orders_id_seq RESTART WITH 118401"))
     await db.commit()
@@ -216,7 +217,8 @@ async def main(do_reset: bool):
                     db.add(OrderItem(order_id=o.id, **it))
         # bugungi yetkazishlar -> ledger
         for o in hist:
-            if o.status == "delivered" and o.delivered_at >= today0:
+            if o.status == "delivered":
+                db.add_all(vendor_entries(o, o.delivered_at))
                 ledger.append(LedgerEntry(courier_id=o.courier_id, type="earn", amount=courier_earning(o.delivery_fee),
                                           order_id=o.id, note="Yetkazish haqi", created_at=o.delivered_at))
                 if o.pay_method == "Naqd":
@@ -303,7 +305,7 @@ async def main(do_reset: bool):
             diff = tgt - sums.get(c.id, 0)
             if diff:
                 ledger.append(LedgerEntry(courier_id=c.id, type="fix" if diff > 0 else "cash", amount=diff, order_id=None,
-                                          note="Oldingi hisob-kitob qoldig'i", created_at=today0 - timedelta(minutes=1)))
+                                          note="Oldingi hisob-kitob qoldig'i", created_at=today0 - timedelta(days=31)))
             c.balance = tgt
         db.add_all(ledger)
 

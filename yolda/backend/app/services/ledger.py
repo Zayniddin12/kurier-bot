@@ -1,11 +1,11 @@
 """Pul hisoblari va kuryer balansi (ledger). Barcha summalar so'mda (int)."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models import Courier, LedgerEntry, Order
+from app.models import Courier, LedgerEntry, Order, VendorLedgerEntry
 
 
 def _round_half_up(x: float) -> int:
@@ -22,6 +22,23 @@ def courier_earning(delivery_fee: int) -> int:
 
 def platform_commission(delivery_fee: int) -> int:
     return delivery_fee - courier_earning(delivery_fee)
+
+
+def vendor_commission(subtotal: int) -> int:
+    return _round_half_up(subtotal * settings.VENDOR_COMMISSION / 100) * 100
+
+
+def vendor_entries(o: Order, at: datetime) -> list[VendorLedgerEntry]:
+    """Yetkazilgan buyurtma bo'yicha restoran hisobi: to'lov (+) va komissiya (−)."""
+    pay_note = ("Naqd buyurtma uchun hisob-kitob" if o.pay_method == "Naqd" else "Naqdsiz to'lov uchun o'tkazma")
+    out = [VendorLedgerEntry(restaurant_id=o.restaurant_id, type="payment", amount=o.subtotal, order_id=o.id,
+                             note=pay_note, created_at=at)]
+    fee = vendor_commission(o.subtotal)
+    if fee:
+        out.append(VendorLedgerEntry(restaurant_id=o.restaurant_id, type="commission", amount=-fee, order_id=o.id,
+                                     note=f"Buyurtma uchun {round(settings.VENDOR_COMMISSION * 100)}% komissiya",
+                                     created_at=at + timedelta(milliseconds=1)))
+    return out
 
 
 def salary_math(balance: int, deliveries: int, late: int) -> dict:

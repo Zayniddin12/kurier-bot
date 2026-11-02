@@ -38,3 +38,10 @@ export const initials = (name: string) => name.split(/\s+/).filter(Boolean).slic
 export const iso = (x: Date) => `${x.getFullYear()}-${p2(x.getMonth() + 1)}-${p2(x.getDate())}`
 export const dec = (n: number, f = 1) => n.toFixed(f).replace('.', ',')
 export const phoneFmt = (p: string) => p.replace(/^\+998\s?/, '').replace(/^(\d{2})(\d{3})(\d{2})(\d{2})$/, '$1 $2 $3 $4')
+/** 313,382,796 ko'rinishidagi summa; signed=true bo'lsa +/− belgisi bilan */
+export const comma = (n: number | null | undefined, signed = false): string => {
+  if (n == null) return '—'
+  const s = Math.abs(Math.round(n)).toLocaleString('en-US')
+  return n < 0 ? '−' + s : (signed && n > 0 ? '+' : '') + s
+}
+export const dmyhms = (x: string | Date | null | undefined) => (x ? `${dmy(x)} ${hm(x)}:${p2(d(x).getSeconds())}` : '—')

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     SLA: int = 45
     CASH_LIMIT: int = 400_000
     COMMISSION: float = 0.15
+    VENDOR_COMMISSION: float = 0.15  # restoran buyurtma summasidan platforma komissiyasi
     BONUS_PER_10: int = 20_000
     LATE_FINE: int = 5_000
 
@@ -56,6 +57,13 @@ ISSUES = {
     "restdelay": {"text": "Restoran buyurtmani kechiktirmoqda", "when": "pickup", "delay": 10},
     "vehicle": {"text": "Transport nosozligi", "when": "any", "delay": 12},
     "wrong": {"text": "Buyurtma tarkibida xatolik", "when": "delivering", "delay": 5},
+}
+
+VENDOR_LEDGER_TYPES = {
+    "payment": ("To'lov", "green"),
+    "commission": ("Komissiya", "amber"),
+    "payout": ("Pul o'tkazildi", "blue"),
+    "fix": ("Tuzatish", "violet"),
 }
 
 LEDGER_TYPES = {

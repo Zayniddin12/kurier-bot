@@ -3,8 +3,8 @@ from types import SimpleNamespace
 
 from sqlalchemy import select
 
-from app.models import LedgerEntry, Order, OrderOffer
-from app.services import dispatch
+from app.models import LedgerEntry, Order, OrderOffer, VendorLedgerEntry
+from app.services import dispatch, ledger
 from app.services.orders import create_order
 from app.services.serializers import now_utc
 from tests.conftest import make_courier, make_restaurant
@@ -136,6 +136,10 @@ async def test_full_flow_ledger_and_queue(db):
     assert {e.type for e in entries} == {"earn", "cash"}
     assert c.balance == sum(e.amount for e in entries)
     assert next(e for e in entries if e.type == "cash").amount == -o.total
+    ve = (await db.execute(select(VendorLedgerEntry).where(VendorLedgerEntry.restaurant_id == r.id))).scalars().all()
+    assert {e.type for e in ve} == {"payment", "commission"}
+    assert next(e for e in ve if e.type == "payment").amount == o.subtotal
+    assert next(e for e in ve if e.type == "commission").amount == -ledger.vendor_commission(o.subtotal)
 
 
 async def test_vehicle_issue_auto_reassign(db):
