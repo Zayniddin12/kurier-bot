@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import logo from "@/assets/logo.png"
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -91,8 +92,8 @@ const time = computed(() => hm(now.value))
     <div class="scrim" @click="ui.sidebarOpen = false" />
     <aside class="side">
       <div class="brand">
-        <span class="logo"><Icon name="bike" :size="20" /></span>
-        <div><b>Yo'lda</b><small>Operator paneli</small></div>
+        <span class="logo"><img :src="logo" alt="Tez-yetkaz" /></span>
+        <small>Operator paneli</small>
       </div>
       <nav>
         <template v-for="(n, i) in nav" :key="i">
@@ -133,9 +134,9 @@ const time = computed(() => hm(now.value))
 <style scoped>
 .shell{display:grid;grid-template-columns:236px 1fr;height:100%;overflow:hidden}
 .side{background:var(--side);color:var(--side-ink);padding:18px 12px 14px;display:flex;flex-direction:column;gap:18px;padding-top:max(18px,env(safe-area-inset-top))}
-.brand{display:flex;align-items:center;gap:10px;padding:0 6px}
-.logo{width:34px;height:34px;border-radius:10px;background:var(--brand);color:#16201A;display:flex;align-items:center;justify-content:center}
-.brand b{display:block;font-size:19px;font-weight:800;color:#fff;line-height:1.1}.brand small{font-size:11px;color:var(--side-muted)}
+.brand{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0 6px}
+.logo{background:var(--brand);border-radius:10px;padding:9px 16px;display:flex;align-items:center;justify-content:center}.logo img{height:20px;width:auto;display:block}
+.brand small{font-size:11px;color:var(--side-muted);text-align:center}
 nav{flex:1;display:flex;flex-direction:column;gap:2px;overflow:auto}
 nav .nh{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--side-muted);padding:12px 10px 4px}
 nav hr{border:0;border-top:1px solid var(--side-active);margin:8px 0;width:100%}
