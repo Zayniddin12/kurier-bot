@@ -10,7 +10,8 @@ const map: Record<string, any> = {
   logout: L.LogOut, up: L.ArrowUp, down: L.ArrowDown, updown: L.ArrowUpDown, check: L.Check, copy: L.Copy,
   alert: L.TriangleAlert, clock: L.Clock, utensils: L.Utensils, star: L.Star, building: L.Building2, box: L.Package,
   chevleft: L.ChevronLeft, chevright: L.ChevronRight, key: L.KeyRound, volume: L.Volume2, mute: L.VolumeOff, refresh: L.RefreshCw,
-  truck: L.Truck, wallet: L.Wallet, receipt: L.Receipt,
+  truck: L.Truck, wallet: L.Wallet, receipt: L.Receipt, edit: L.Pencil, ban: L.Ban, note: L.StickyNote, mail: L.Mail,
+  headset: L.Headset,
 }
 const C = computed(() => map[props.name] || L.Circle)
 </script>

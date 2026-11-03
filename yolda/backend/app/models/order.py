@@ -25,7 +25,8 @@ class Order(Base):
     address: Mapped[str] = mapped_column(String(400), default="")
     lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     lng: Mapped[float | None] = mapped_column(Float, nullable=True)
-    note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    note: Mapped[str | None] = mapped_column(String(500), nullable=True)  # mijoz izohi — restoranga
+    courier_note: Mapped[str | None] = mapped_column(String(500), nullable=True)  # mijoz izohi — kuryerga
     courier_id: Mapped[int | None] = mapped_column(ForeignKey("couriers.id"), nullable=True, index=True)
     queued: Mapped[bool] = mapped_column(Boolean, default=False)
     queue_position: Mapped[int | None] = mapped_column(Integer, nullable=True)

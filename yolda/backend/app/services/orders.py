@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.models import Courier, Order, OrderIssue, OrderItem, OrderOffer, Restaurant
+from app.models import BlockedCustomer, Courier, Order, OrderIssue, OrderItem, OrderOffer, Restaurant
 from app.services import webhooks
 from app.services.events import emit, esc, feed
 from app.services.geo import road_km
@@ -39,6 +39,8 @@ async def create_order(db, restaurant: Restaurant, *, external_id: str, customer
         raise OrderError("Restoran hozir buyurtma qabul qilmayapti", 409)
     if not items:
         raise OrderError("Buyurtma tarkibi bo'sh", 422)
+    if await db.get(BlockedCustomer, customer_phone):
+        raise OrderError("Bu mijoz bloklangan", 403)
     km = None
     if lat is not None and lng is not None:
         km = road_km(restaurant.lat, restaurant.lng, lat, lng)

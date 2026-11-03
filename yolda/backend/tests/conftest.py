@@ -27,7 +27,7 @@ async def _schema():
 @pytest_asyncio.fixture(autouse=True)
 async def _clean(_schema):
     async with engine.begin() as c:
-        await c.execute(text("TRUNCATE webhook_deliveries, dismissed_alerts, complaints, feed_events, ledger_entries, vendor_ledger_entries, "
+        await c.execute(text("TRUNCATE order_logs, customer_notes, blocked_customers, webhook_deliveries, dismissed_alerts, complaints, feed_events, ledger_entries, vendor_ledger_entries, "
                              "order_issues, order_offers, order_items, orders, couriers, users, restaurants "
                              "RESTART IDENTITY CASCADE"))
         await c.execute(text("ALTER SEQUENCE orders_id_seq RESTART WITH 118401"))

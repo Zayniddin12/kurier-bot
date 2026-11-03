@@ -90,3 +90,20 @@ class OrderLocationIn(BaseModel):
     lat: float = Field(ge=-90, le=90)
     lng: float = Field(ge=-180, le=180)
     address: str | None = Field(default=None, max_length=400)
+
+
+class AssignIn(BaseModel):
+    courier_id: int
+
+
+class OrderNotesIn(BaseModel):
+    restaurant_note: str | None = Field(default=None, max_length=500)
+    courier_note: str | None = Field(default=None, max_length=500)
+
+
+class CustomerNoteIn(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+
+
+class BlockIn(BaseModel):
+    reason: str = Field(default="", max_length=300)

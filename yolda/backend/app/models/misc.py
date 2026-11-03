@@ -43,3 +43,31 @@ class WebhookDelivery(Base):
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class OrderLog(Base):
+    """Operator amallari jurnali (kuryer biriktirish, eslatma, holat o'tkazish...)."""
+    __tablename__ = "order_logs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    actor: Mapped[str] = mapped_column(String(200), default="")
+    text: Mapped[str] = mapped_column(String(500))
+
+
+class CustomerNote(Base):
+    """Operatorning mijoz haqidagi eslatmalari (telefon raqami bo'yicha)."""
+    __tablename__ = "customer_notes"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    phone: Mapped[str] = mapped_column(String(30), index=True)
+    text: Mapped[str] = mapped_column(String(500))
+    author: Mapped[str] = mapped_column(String(200), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BlockedCustomer(Base):
+    __tablename__ = "blocked_customers"
+    phone: Mapped[str] = mapped_column(String(30), primary_key=True)
+    reason: Mapped[str] = mapped_column(String(300), default="")
+    blocked_by: Mapped[str] = mapped_column(String(200), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

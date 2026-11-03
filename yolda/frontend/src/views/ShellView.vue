@@ -26,6 +26,7 @@ const nav = computed(() => [
   { to: '/', icon: 'gauge', label: 'Umumiy holat' },
   { to: '/map', icon: 'map', label: 'Jonli xarita' },
   ...(auth.isStaff ? [] : [{ to: '/couriers', icon: 'bike', label: 'Kuryerlar' }]),
+  ...(auth.isStaff ? [] : [{ to: '/operator', icon: 'headset', label: 'Operator navbati' }]),
   { to: '/orders', icon: 'orders', label: 'Buyurtmalar' },
   { to: '/restaurants', icon: 'store', label: 'Restoranlar' },
   ...(auth.isStaff ? [] : [
