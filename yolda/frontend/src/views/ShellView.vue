@@ -147,14 +147,14 @@ nav hr{border:0;border-top:1px solid var(--side-active);margin:8px 0;width:100%}
 .menu{position:absolute;bottom:56px;left:0;right:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:var(--shadow)}
 .menu button{width:100%;border:0;background:transparent;display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:7px;color:var(--ink);font-weight:600}
 .menu button:hover{background:var(--surface-2)}
-.main{display:flex;flex-direction:column;min-width:0;height:100%}
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%}
 .top{height:64px;flex:none;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 20px;padding-top:env(safe-area-inset-top);box-sizing:content-box}
 .ttl h1{font-size:19px;font-weight:700;line-height:1.2}.ttl p{font-size:12.5px;color:var(--muted)}
 .burger{display:none}
 .clock{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);white-space:nowrap}
 .clock i{width:8px;height:8px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}.clock i.off{background:var(--red);animation:none}
-.content{flex:1;overflow:auto;position:relative;z-index:0;padding-bottom:env(safe-area-inset-bottom)}
-.content.flush{overflow:hidden}
+.content{flex:1;min-height:0;overflow:auto;position:relative;z-index:0;padding-bottom:env(safe-area-inset-bottom)}
+.content.flush{overflow:hidden;display:flex;flex-direction:column}.content.flush>*{flex:1;min-height:0}
 .scrim{display:none}
 @media (max-width:860px){
   .shell{grid-template-columns:1fr}
