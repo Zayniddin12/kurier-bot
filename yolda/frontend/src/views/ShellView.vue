@@ -135,7 +135,7 @@ const time = computed(() => hm(now.value))
 .shell{display:grid;grid-template-columns:236px 1fr;height:100%;overflow:hidden}
 .side{background:var(--side);color:var(--side-ink);padding:18px 12px 14px;display:flex;flex-direction:column;gap:18px;padding-top:max(18px,env(safe-area-inset-top))}
 .brand{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0 6px}
-.logo{background:var(--brand);border-radius:10px;padding:9px 16px;display:flex;align-items:center;justify-content:center}.logo img{height:20px;width:auto;display:block}
+.logo{background:#12292F;border-radius:10px;padding:9px 16px;display:flex;align-items:center;justify-content:center}.logo img{height:20px;width:auto;display:block}
 .brand small{font-size:11px;color:var(--side-muted);text-align:center}
 nav{flex:1;display:flex;flex-direction:column;gap:2px;overflow:auto}
 nav .nh{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--side-muted);padding:12px 10px 4px}

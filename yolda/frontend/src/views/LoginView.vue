@@ -27,6 +27,6 @@ async function submit() {
 .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:16px}
 .card{width:380px;max-width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
 .brand{display:flex;flex-direction:column;gap:8px;align-items:center;margin-bottom:6px}.brand small{color:var(--muted);font-size:12px}
-.logo{background:var(--brand);border-radius:12px;padding:12px 22px;display:flex;align-items:center;justify-content:center}.logo img{height:26px;width:auto;display:block}
+.logo{background:#12292F;border-radius:12px;padding:12px 22px;display:flex;align-items:center;justify-content:center}.logo img{height:26px;width:auto;display:block}
 .err{color:var(--red);font-size:12px}
 </style>
