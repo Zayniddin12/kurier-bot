@@ -9,7 +9,7 @@ from app import errors
 from app.api.admin import router as admin_router
 from app.api.bot.routes import router as bot_router
 from app.api.courier import router as courier_router
-from app.api.integration import router as integration_router
+from app.api.integration import multicard_router, router as integration_router
 from app.config import settings
 from app.db import SessionLocal
 from app.models import User
@@ -46,6 +46,7 @@ app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in settings.CO
 errors.install(app)
 app.include_router(admin_router)
 app.include_router(integration_router)
+app.include_router(multicard_router)
 app.include_router(courier_router)
 app.include_router(bot_router)
 

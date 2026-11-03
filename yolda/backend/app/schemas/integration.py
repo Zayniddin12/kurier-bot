@@ -21,7 +21,8 @@ class ItemIn(BaseModel):
 
 
 class PaymentIn(BaseModel):
-    method: Literal["Payme", "Click", "Karta", "Naqd"]
+    method: Literal["Payme", "Click", "Karta", "Naqd", "Multicard"]   # "Multicard" = onlayn (usulni mijoz tanlaydi)
+    system: str | None = Field(None, max_length=20)   # onlayn to'lov usuli kodi (GET /payment-methods): card, payme, click, ...
     status: Literal["paid", "pending"] = "paid"
 
 
@@ -33,6 +34,13 @@ class OrderIn(BaseModel):
     payment: PaymentIn
     note: str | None = Field(None, max_length=500)
     delivery_fee: int | None = Field(None, ge=0)
+
+
+class PayIn(BaseModel):
+    method: str = Field("card", max_length=20)
+    return_url: str | None = Field(None, max_length=500)
+    return_error_url: str | None = Field(None, max_length=500)
+    lang: Literal["ru", "uz", "en"] = "uz"
 
 
 class PaymentUpdateIn(BaseModel):

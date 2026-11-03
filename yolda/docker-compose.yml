@@ -26,6 +26,15 @@ services:
       SEED_DEMO: ${SEED_DEMO:-false}
       DEMO_SIMULATION: ${DEMO_SIMULATION:-false}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      MULTICARD_BASE_URL: ${MULTICARD_BASE_URL:-https://dev-mesh.multicard.uz}
+      MULTICARD_APP_ID: ${MULTICARD_APP_ID:-}
+      MULTICARD_SECRET: ${MULTICARD_SECRET:-}
+      MULTICARD_STORE_ID: ${MULTICARD_STORE_ID:-}
+      MULTICARD_MXIK: ${MULTICARD_MXIK:-}
+      MULTICARD_PACKAGE_CODE: ${MULTICARD_PACKAGE_CODE:-}
+      MULTICARD_METHODS: ${MULTICARD_METHODS:-card,payme,click,uzum}
+      MULTICARD_CALLBACK_IPS: ${MULTICARD_CALLBACK_IPS:-}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-}
     depends_on:
       postgres:
         condition: service_healthy

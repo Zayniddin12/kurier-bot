@@ -37,6 +37,16 @@ def queue(db, order, restaurant: Restaurant, courier):
                            next_retry_at=datetime.now(timezone.utc)))
 
 
+def queue_payment(db, order, restaurant: Restaurant, event: str, payment):
+    if not restaurant.webhook_url:
+        return
+    payload = {"event": event, "external_id": order.external_id, "pay_status": order.pay_status, "amount": payment.amount,
+               "paid_at": payment.paid_at.isoformat() if payment.paid_at else None,
+               "at": datetime.now(timezone.utc).isoformat()}
+    db.add(WebhookDelivery(restaurant_id=restaurant.id, order_id=order.id, event=event, payload=payload, attempts=0,
+                           next_retry_at=datetime.now(timezone.utc)))
+
+
 async def deliver_pending(client: httpx.AsyncClient | None = None):
     now = datetime.now(timezone.utc)
     async with SessionLocal() as db:

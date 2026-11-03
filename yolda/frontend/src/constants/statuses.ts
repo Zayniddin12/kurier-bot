@@ -50,8 +50,8 @@ export const REST_STATUS: Record<string, { label: string; tone: Tone }> = {
   paused: { label: 'Pauzada', tone: 'amber' },
   offline: { label: 'Oflayn', tone: 'grey' },
 }
-export const PAY_METHODS = ['Payme', 'Naqd', 'Click', 'Karta']
-export const PAY_COLORS: Record<string, string> = { Payme: '#33CCCC', Naqd: 'var(--teal)', Click: 'var(--blue)', Karta: 'var(--violet)' }
+export const PAY_METHODS = ['Payme', 'Naqd', 'Click', 'Karta', 'Multicard']
+export const PAY_COLORS: Record<string, string> = { Payme: '#33CCCC', Naqd: 'var(--teal)', Click: 'var(--blue)', Karta: 'var(--violet)', Multicard: 'var(--brand)' }
 export const CUISINES = ['Milliy taomlar', 'Fast-fud', 'Kafe', 'Pitsa', 'Sushi', 'Grill', "Sog'lom ovqat"]
 export const DISTRICTS = ['Yunusobod', 'Olmazor', 'Shayxontohur', 'Chilonzor', 'Yakkasaroy', 'Mirobod', "Mirzo Ulug'bek", 'Yashnobod', 'Sergeli', 'Uchtepa']
 export const SLA = 45

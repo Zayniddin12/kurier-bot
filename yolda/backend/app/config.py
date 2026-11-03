@@ -14,6 +14,20 @@ class Settings(BaseSettings):
     OSRM_URL: str = "https://router.project-osrm.org"  # marshrut serveri; bo'sh = faqat to'g'ri chiziq
     BOT_API_KEY: str = ""  # Telegram bot servisi shu kalit bilan /api/bot ga murojaat qiladi (bo'sh = o'chiq)
 
+    # Multicard (Rahmat) to'lov shlyuzi. Bo'sh = o'chiq (/pay 503 qaytaradi)
+    MULTICARD_BASE_URL: str = "https://dev-mesh.multicard.uz"  # production: https://mesh.multicard.uz
+    MULTICARD_APP_ID: str = ""
+    MULTICARD_SECRET: str = ""        # token olish va callback imzosi uchun
+    MULTICARD_STORE_ID: str = ""      # kassa ID
+    MULTICARD_MXIK: str = ""          # taomlar uchun IKPU kodi (tasnif.soliq.uz) — fiskal chek uchun majburiy
+    MULTICARD_PACKAGE_CODE: str = ""  # shu IKPU ning o'ram kodi
+    MULTICARD_DELIVERY_MXIK: str = ""      # yetkazib berish xizmati IKPU (bo'sh = MULTICARD_MXIK)
+    MULTICARD_DELIVERY_PACKAGE_CODE: str = ""
+    MULTICARD_CALLBACK_IPS: str = ""  # vergul bilan; bo'sh = IP tekshirilmaydi (imzo baribir tekshiriladi). Multicard: 195.158.26.90
+    MULTICARD_METHODS: str = "card,payme,click,uzum"  # saytlarda ko'rsatiladigan usullar (payments.METHODS dagi kodlar)
+    MULTICARD_INVOICE_TTL: int = 3600  # to'lov havolasi amal qilish muddati (soniya)
+    PUBLIC_API_URL: str = ""          # callback manzili uchun, masalan https://yolda-api.2-31-28-150.sslip.io
+
     # Biznes konstantalari
     SLA: int = 45
     CASH_LIMIT: int = 400_000

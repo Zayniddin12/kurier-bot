@@ -110,6 +110,8 @@ async def cancel_order(db, o: Order, reason: str, *, failed_payment: bool = Fals
     o.status, o.cancelled_at, o.cancel_reason = "cancelled", now, reason
     await _release_courier(db, o)
     o.queued, o.queue_position = False, None
+    from app.services import payments
+    await payments.on_order_cancelled(db, o)
     r = await db.get(Restaurant, o.restaurant_id)
     await feed(db, f"Bekor qilindi: <b>#{o.id}</b> · {esc(reason)}" + (" · to'lov qaytarildi" if refunded else ""),
                "red", r.id)

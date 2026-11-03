@@ -11,9 +11,10 @@ from app.db import get_db
 from app.deps import bearer
 from app.errors import ApiError
 from app.models import Courier, Order, Restaurant
-from app.schemas.integration import CancelIn, OrderIn, PaymentUpdateIn, RestStatusIn
+from app.schemas.integration import CancelIn, OrderIn, PayIn, PaymentUpdateIn, RestStatusIn
 from app.security import hash_key
 from app.services import orders as osvc
+from app.services import payments as psvc
 from app.services.eta import compute_eta
 from app.services.events import commit, emit, esc, feed
 from app.services.geo import road_km
@@ -63,12 +64,22 @@ async def create_order(body: OrderIn, r: Restaurant = Depends(restaurant_auth), 
         o, created = await osvc.create_order(
             db, r, external_id=body.external_id, customer_name=body.customer.name, customer_phone=body.customer.phone,
             address=body.address.text, district=body.address.district, lat=body.address.lat, lng=body.address.lng,
-            items=[i.model_dump() for i in body.items], pay_method=body.payment.method, pay_status=body.payment.status,
-            note=body.note, delivery_fee=body.delivery_fee)
+            items=[i.model_dump() for i in body.items], pay_method=body.payment.method,
+            pay_status="pending" if body.payment.method == "Multicard" else body.payment.status, note=body.note, delivery_fee=body.delivery_fee)
     except osvc.OrderError as e:
         raise ApiError(e.status, e.message, "delivery_fee" if "delivery_fee" in e.message else None)
     await commit(db)
-    return JSONResponse(short(o), status_code=201 if created else 200)
+    d = short(o)
+    if o.pay_method == "Multicard" and o.pay_status == "pending":
+        try:   # buyurtma yaratildi; havola olinmasa restoran /pay ni qayta chaqiradi
+            p = await psvc.create_payment(db, o, method=body.payment.system or "card")
+            await commit(db)
+            d["payment"] = psvc.payment_dict(p)
+        except psvc.PaymentError as e:
+            await db.rollback()
+            d["payment"] = None
+            d["payment_error"] = e.message
+    return JSONResponse(d, status_code=201 if created else 200)
 
 
 @router.get("/orders/{external_id}")
@@ -94,6 +105,35 @@ async def payment(external_id: str, body: PaymentUpdateIn, r: Restaurant = Depen
         raise ApiError(e.status, e.message)
     await commit(db)
     return short(o)
+
+
+@router.get("/payment-methods")
+async def payment_methods(r: Restaurant = Depends(restaurant_auth)):
+    """Saytda mijozga ko'rsatiladigan onlayn to'lov usullari. `code` ni /pay (yoki POST /orders da payment.system) ga yuboring."""
+    return {"methods": psvc.enabled_methods()}
+
+
+@router.post("/orders/{external_id}/pay")
+async def pay(external_id: str, body: PayIn | None = None, r: Restaurant = Depends(restaurant_auth),
+              db: AsyncSession = Depends(get_db)):
+    """Mijoz uchun onlayn to'lov havolasini yaratadi (Multicard). Idempotent. To'lov tushgach buyurtma avtomatik 'paid' bo'ladi."""
+    o = await find(db, r, external_id)
+    b = body or PayIn()
+    try:
+        p = await psvc.create_payment(db, o, method=b.method, return_url=b.return_url, return_error_url=b.return_error_url, lang=b.lang)
+    except psvc.PaymentError as e:
+        await db.rollback()
+        raise ApiError(e.status, e.message)
+    await commit(db)
+    return {**short(o), "payment": psvc.payment_dict(p)}
+
+
+@router.get("/orders/{external_id}/payment")
+async def payment_status(external_id: str, r: Restaurant = Depends(restaurant_auth), db: AsyncSession = Depends(get_db)):
+    from app.models import Payment
+    o = await find(db, r, external_id)
+    p = (await db.execute(select(Payment).where(Payment.order_id == o.id).order_by(Payment.id.desc()))).scalars().first()
+    return {"pay_status": o.pay_status, "pay_method": o.pay_method, "payment": psvc.payment_dict(p) if p else None}
 
 
 @router.post("/orders/{external_id}/cancel")
