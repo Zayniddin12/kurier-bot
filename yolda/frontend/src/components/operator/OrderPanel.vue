@@ -24,6 +24,7 @@ const tab = ref<'main' | 'items' | 'pay' | 'fiscal' | 'logs'>('main')
 watch(() => p.id, () => { tab.value = 'main' })
 const modal = ref<'' | 'cancel' | 'loc' | 'courier' | 'swap' | 'rnote' | 'cnote' | 'custnote' | 'block' | 'unassign'>('')
 const busy = ref(false)
+const mapOpen = ref(true)
 
 function apply(d: any) { o.value = d; emit('changed'); modal.value = '' }
 async function run(fn: () => Promise<any>, okMsg?: string) {
@@ -65,23 +66,23 @@ const tabs = computed(() => o.value ? [
     <template v-else-if="o">
       <div class="top">
         <div class="t1">
-          <b class="num">#{{ o.id }}</b><span class="faint num">{{ hm(o.created_at) }}</span>
+          <b class="num">#{{ o.id }}</b><span class="faint num tm">{{ hm(o.created_at) }}</span>
           <span v-if="o.external_id" class="faint ext" :title="'Restoran buyurtma raqami'">{{ o.external_id }}</span>
           <span class="sp" />
-          <span class="timer num" :class="{ red: late }"><Icon name="clock" :size="14" /> {{ elapsed }}</span>
           <Btn v-if="active" sm variant="danger" @click="modal = 'cancel'">Bekor qilish</Btn>
         </div>
         <div class="t2">
           <Pill :tone="o.status_color">{{ o.status_text }}</Pill>
-          <Tag>{{ o.pay_method }} · {{ moneyS(o.total) }}</Tag><Pill :tone="o.pay_status_color">{{ o.pay_status_text }}</Pill>
+          <span v-if="active" class="timer num" :class="{ red: late }">{{ elapsed }}</span>
+          <Tag>{{ o.pay_method }} · {{ moneyS(o.total) }}</Tag><Pill v-if="o.pay_status_color && o.pay_status_color !== 'teal'" :tone="o.pay_status_color">{{ o.pay_status_text }}</Pill>
           <Tag v-if="o.distance_km != null">{{ o.distance_km.toFixed(1) }} km</Tag>
           <Tag v-if="o.queued">kuryer navbatida</Tag>
           <Pill v-if="o.customer.blocked" tone="red">Mijoz bloklangan</Pill>
         </div>
-        <div class="steps">
-          <span v-for="s in o.steps" :key="s.key" class="st" :class="s.state"><i />{{ s.label }}</span>
-          <span v-if="o.status === 'cancelled'" class="st cancelled"><i />Bekor qilindi</span>
-        </div>
+      </div>
+      <div class="steps">
+        <span v-for="s in o.steps" :key="s.key" class="st" :class="s.state">{{ s.label }}</span>
+        <span v-if="o.status === 'cancelled'" class="st cancelled">Bekor qilindi</span>
       </div>
 
       <div v-if="o.issue" class="warn red">
@@ -98,8 +99,8 @@ const tabs = computed(() => o.value ? [
       <!-- Asosiy -->
       <div v-if="tab === 'main'" class="main">
         <div class="cols">
-          <div class="note"><div class="nh">Mijoz izohi — restoranga<IconBtn v-if="active" icon="edit" title="Tahrirlash" @click="modal = 'rnote'" /></div><p :class="{ faint: !o.restaurant_note }">{{ o.restaurant_note || 'Izoh yo\'q' }}</p></div>
-          <div class="note"><div class="nh">Mijoz izohi — kuryerga<IconBtn v-if="active" icon="edit" title="Tahrirlash" @click="modal = 'cnote'" /></div><p :class="{ faint: !o.courier_note }">{{ o.courier_note || 'Izoh yo\'q' }}</p></div>
+          <div class="note"><div class="nh">Mijoz izohi — restoranga<IconBtn v-if="active" icon="edit" title="Tahrirlash" @click="modal = 'rnote'" /></div><p v-if="o.restaurant_note">{{ o.restaurant_note }}</p></div>
+          <div class="note"><div class="nh">Mijoz izohi — kuryerga<IconBtn v-if="active" icon="edit" title="Tahrirlash" @click="modal = 'cnote'" /></div><p v-if="o.courier_note">{{ o.courier_note }}</p></div>
 
           <div class="card">
             <div class="ch">Mijoz<span class="sp" /><span class="stat teal" title="Yetkazilgan buyurtmalar">✓ {{ o.customer.delivered }}</span><span class="stat red" title="Bekor qilingan buyurtmalar">✗ {{ o.customer.cancelled }}</span></div>
@@ -145,7 +146,7 @@ const tabs = computed(() => o.value ? [
             </template>
           </div>
 
-          <div class="card wide"><div class="ch">Yetkazib berish xaritasi</div><OrderMap :order="o" /></div>
+          <div class="card wide"><button class="ch mh" @click="mapOpen = !mapOpen">Yetkazib berish xaritasi<Icon :name="mapOpen ? 'chevup' : 'chevron'" :size="12" /></button><OrderMap v-if="mapOpen" :order="o" /></div>
         </div>
 
         <aside class="tl">
@@ -155,7 +156,7 @@ const tabs = computed(() => o.value ? [
             <div class="tb"><small v-if="s.delta" class="d num">+{{ s.delta }}</small><b>{{ s.label }}</b><div v-if="s.at" class="sub num">{{ dmyhm(s.at) }}</div></div>
             <span v-if="i < o.op_timeline.length - 1" class="ln" />
           </div>
-          <div class="tot">Jami vaqt<b class="num">{{ totalFmt }}</b></div>
+          <div class="tot"><span><Icon name="clock" :size="14" /> Jami vaqt</span><b class="num">{{ totalFmt }}</b></div>
         </aside>
       </div>
 
@@ -201,45 +202,51 @@ const tabs = computed(() => o.value ? [
 </template>
 
 <style scoped>
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-width:0;overflow:hidden}
-.top{padding:14px 18px 10px;display:flex;flex-direction:column;gap:9px}
-.t1{display:flex;align-items:center;gap:10px}.t1 b{font-size:20px}.ext{font-size:12px}
-.timer{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:15px;color:var(--amber)}.timer.red{color:var(--red)}
+.panel{background:var(--surface);min-width:0}
+.top{padding:15px 20px 10px;display:flex;flex-direction:column;gap:6px}
+.t1{display:flex;align-items:baseline;gap:8px}.t1 b{font-size:20px;font-weight:700;line-height:1.3}.t1 .tm{font-size:13px}.ext{font-size:12px}
+.t1 :deep(.btn){align-self:flex-start;height:28px;padding:0 12px;font-size:12.5px;font-weight:500;border-radius:6px}
+.timer{font-weight:600;font-size:14px;color:var(--amber)}.timer.red{color:var(--red)}
 .t2{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.steps{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
-.st{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:8px;font-size:12.5px;font-weight:600;border:1px solid var(--line-2);color:var(--faint);background:var(--surface-2)}
-.st i{width:7px;height:7px;border-radius:50%;background:currentColor}
-.st.done{color:var(--teal);background:var(--teal-soft);border-color:transparent}.st.current{color:var(--amber);background:var(--amber-soft);border-color:var(--amber)}
-.st.cancelled{color:var(--red);background:var(--red-soft);border-color:transparent}.st.off{opacity:.45}
-.warn{margin:0 18px 10px;padding:10px 12px;border-radius:10px;font-size:13px}.warn.red{background:var(--red-soft);color:var(--red)}
-.next{margin:0 18px 12px;padding:12px 14px;border-radius:12px;background:var(--amber-soft);border:1px solid var(--amber);display:flex;gap:14px;align-items:center}
+.steps{display:flex;gap:2px;flex-wrap:wrap;padding:6px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:6px}
+.st{display:inline-flex;align-items:center;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:500;border:1px solid transparent;color:var(--muted);line-height:1.5}
+.st.done{background:#E3BD3A;color:var(--brand-ink);font-weight:600}.st.current{background:var(--brand-soft);color:var(--brand-ink);border-color:#E3BD3A;font-weight:600}
+.st.cancelled{color:var(--red);background:var(--red-soft);font-weight:600}.st.off{color:var(--faint)}
+.warn{margin:12px 20px 0;padding:10px 12px;border-radius:8px;font-size:13px}.warn.red{background:var(--red-soft);color:var(--red)}
+.next{margin:12px 20px 0;padding:12px 14px;border-radius:10px;background:var(--brand-soft);border:1px solid #E3BD3A;display:flex;gap:14px;align-items:center}
 .nt{flex:1;font-size:13px}.nt p{margin-top:2px;color:var(--ink);opacity:.8}
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 12px;overflow:auto}
-.tabs button{border:0;background:transparent;padding:11px 12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
-.tabs button.on{color:var(--ink);border-bottom-color:var(--brand)}.tabs small{background:var(--grey-soft);border-radius:999px;padding:0 7px;font-size:11px;color:var(--muted)}
-.main{display:grid;grid-template-columns:1fr 260px;gap:16px;padding:16px 18px}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;min-width:0}
-.card,.note{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tabs{display:flex;gap:28px;border-bottom:1px solid var(--line);padding:0 20px;overflow:auto;margin-top:0}
+.tabs button{border:0;background:transparent;padding:13px 0 11px;font-size:14px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;display:inline-flex;gap:7px;align-items:center;white-space:nowrap}
+.tabs button.on{color:var(--ink);font-weight:700;border-bottom-color:var(--brand)}.tabs small{background:var(--grey-soft);border-radius:8px;padding:0 6px;font-size:11px;line-height:16px;color:var(--muted);font-weight:500}
+.main{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:13px 13px 16px}
+.cols{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start;min-width:0}
+.card,.note{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0;background:var(--surface)}
+.note{gap:2px;justify-content:center;min-height:33px;padding:7px 12px}
 .card.wide{grid-column:1/-1}
-.ch,.nh{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+.ch,.nh{font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:8px;line-height:1.4}
+.mh{border:0;background:transparent;padding:0;text-align:left;cursor:pointer;width:100%}
 .nh{justify-content:space-between}.note p{font-size:13px;margin:0}
-.stat{font-weight:700;font-size:12px;text-transform:none;letter-spacing:0}
-.r1{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13.5px}
-.cb{font-weight:700;color:var(--ink)}.cb:hover{color:var(--blue)}
-.cn{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:12.5px}.cn li{background:var(--amber-soft);border-radius:8px;padding:5px 8px}.cn small{display:block;color:var(--muted);font-size:11px}
+.nh :deep(.ib){width:22px;height:22px;border:0;background:transparent;color:var(--faint)}
+.stat{font-weight:600;font-size:12px;text-transform:none;letter-spacing:0}
+.r1{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}.r1 b{font-weight:600}
+.r1 :deep(.ib){width:24px;height:24px;border:0;background:transparent;color:var(--faint)}
+.cb{font-weight:600;color:var(--ink)}.cb:hover{color:var(--link)}
+.cn{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:12.5px}.cn li{background:var(--amber-soft);border-radius:6px;padding:5px 8px}.cn small{display:block;color:var(--muted);font-size:11px}
 .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.pickbtn{margin-top:4px;border:1.5px dashed var(--line);background:transparent;border-radius:10px;padding:10px;font-weight:600;color:var(--blue)}.pickbtn:hover{background:var(--surface-2)}
-.tl{border:1px solid var(--line);border-radius:12px;padding:12px 14px;align-self:start}
-.ti{position:relative;display:flex;gap:10px;padding-bottom:16px}
-.dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none;background:var(--surface);color:var(--faint);z-index:1}
-.ti.done .dot{border-color:var(--teal);color:var(--teal)}.ti.current .dot{border-color:var(--amber);color:var(--amber)}.ti.cancelled .dot{border-color:var(--red);color:var(--red)}
-.ti .ln{position:absolute;left:11px;top:24px;bottom:0;border-left:2px solid var(--line)}
-.ti.todo b{color:var(--faint)}.tb b{font-size:13px;display:block}.d{font-size:11px;color:var(--teal);font-weight:700}
-.tot{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:10px;font-size:13px}
-.pane{padding:14px 18px 20px}
+.pickbtn{margin-top:4px;border:1px dashed var(--line);background:transparent;border-radius:8px;padding:8px;font-weight:500;color:var(--link);font-size:13px}.pickbtn:hover{background:var(--surface-2)}
+.tl{border:1px solid var(--line);border-radius:10px;padding:10px 12px 12px;align-self:start;min-width:0}
+.tl .ch{margin-bottom:8px}
+.ti{position:relative;display:flex;gap:10px;padding-bottom:14px}
+.dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none;background:var(--surface);color:var(--faint);z-index:1}
+.ti.done .dot{border-color:var(--teal);color:var(--teal)}.ti.current .dot{border-color:var(--blue);color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}.ti.cancelled .dot{border-color:var(--red);color:var(--red)}
+.ti .ln{position:absolute;left:15px;top:32px;bottom:0;border-left:2px solid var(--line)}
+.ti.todo b{color:var(--faint);font-weight:500}.tb b{font-size:14.5px;font-weight:600;display:block;line-height:1.35}.tb{padding-top:2px}.d{font-size:11.5px;color:var(--muted);font-weight:500;display:block}
+.ti .sub{font-size:12.5px;color:var(--muted)}
+.tot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:10px;font-size:13.5px;color:var(--muted)}.tot span{display:inline-flex;align-items:center;gap:6px}.tot b{color:var(--ink);font-size:15px}
+.pane{padding:14px 20px 20px}
 .tbl{width:100%;border-collapse:collapse;font-size:13.5px}.tbl td{padding:10px 0;border-bottom:1px solid var(--line-2);vertical-align:top}.tbl .r{text-align:right;white-space:nowrap}
-.sum{display:grid;grid-template-columns:1fr auto;gap:6px 20px;margin:14px 0 0;font-size:13.5px}.sum dd{margin:0;text-align:right}.sum dt{color:var(--muted)}.sum .tt{font-weight:800;color:var(--ink);font-size:15px;border-top:1px solid var(--line);padding-top:8px}
+.sum{display:grid;grid-template-columns:1fr auto;gap:6px 20px;margin:14px 0 0;font-size:13.5px}.sum dd{margin:0;text-align:right}.sum dt{color:var(--muted)}.sum .tt{font-weight:700;color:var(--ink);font-size:15px;border-top:1px solid var(--line);padding-top:8px}
 .lg{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line-2);font-size:13px;align-items:baseline}.lg .num{white-space:nowrap;font-size:12px}.lg span:nth-child(2){flex:1}
-@media (max-width:1180px){.main{grid-template-columns:1fr}.tl{order:-1}}
+@media (max-width:1180px){.main{grid-template-columns:1fr}.cols{grid-column:auto}.tl{order:-1}}
 @media (max-width:640px){.cols{grid-template-columns:1fr}.next{flex-direction:column;align-items:stretch}}
 </style>

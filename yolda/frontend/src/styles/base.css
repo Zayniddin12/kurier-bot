@@ -1,9 +1,9 @@
 *{box-sizing:border-box}
 html,body,#app{height:100%;margin:0}
-body{font-family:'Onest',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.45;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;font-size:14px;line-height:1.45;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-a{color:var(--blue);text-decoration:none}
+a{color:var(--link);text-decoration:none}
 h1,h2,h3,h4,p{margin:0}
 .num{font-variant-numeric:tabular-nums}
 :focus-visible{outline:2px solid var(--brand);outline-offset:2px}
@@ -41,7 +41,7 @@ h1,h2,h3,h4,p{margin:0}
 :root[data-theme="dark"] .leaflet-tile{filter:invert(1) hue-rotate(180deg) brightness(.8) contrast(.9) saturate(.6)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .leaflet-tile{filter:invert(1) hue-rotate(180deg) brightness(.8) contrast(.9) saturate(.6)}}
 .mk-label{position:absolute;top:24px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10px;font-weight:700;color:#16201A;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff}
-.inp,select.inp,input.inp{height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);padding:0 11px;font-size:13px;min-width:0}
+.inp,select.inp,input.inp{height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);padding:0 11px;font-size:13px;min-width:0}
 textarea.inp{height:auto;padding:8px 11px}
 .inp.lg{height:40px}
 .hm-wrap{background:none!important;border:0!important}

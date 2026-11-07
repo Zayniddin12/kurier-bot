@@ -65,6 +65,7 @@ function onKey(e: KeyboardEvent) {
   const el = e.target as HTMLElement
   const typing = el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)
   if (e.key === '/' && !typing) { e.preventDefault(); searchEl.value?.focus(); return }
+  if (!typing && !e.ctrlKey && !e.metaKey && !e.altKey && /^[1-7]$/.test(e.key)) { chip.value = CHIPS[Number(e.key) - 1].k; return }
   if (typing || !items.value.length || !['ArrowDown', 'ArrowUp'].includes(e.key)) return
   e.preventDefault()
   const i = items.value.findIndex((x) => x.id === active.value)
@@ -91,15 +92,15 @@ const hasFilters = computed(() => !!(courierId.value || ui.restaurantId || dq.va
 
 <template>
   <div class="wrap">
-    <div class="bar">
+    <Teleport to="#hdr-slot">
       <div class="srch"><Icon name="search" :size="16" /><input ref="searchEl" v-model="q" class="inp" placeholder="Qidiruv: № / ism / telefon / restoran  ( / )" /></div>
-      <div class="kpis" v-if="c">
-        <div><span>Faol buyurtma</span><b class="num">{{ c.active }}</b></div>
-        <div :class="{ warn: c.attention }"><span>Diqqat</span><b class="num">{{ c.attention }}</b></div>
-        <div><span>Kuryersiz</span><b class="num">{{ c.nocourier }}</b></div>
-        <div><span>Yo'lda</span><b class="num">{{ c.onway }}</b></div>
-        <div class="ok"><span>Bo'sh kuryer</span><b class="num">{{ c.idle_couriers }}</b></div>
-      </div>
+    </Teleport>
+    <div class="kpis" v-if="c">
+      <div><b class="num">{{ c.active }}</b><span>Faol buyurtma</span></div>
+      <div :class="{ warn: c.attention }"><b class="num">{{ c.attention }}</b><span>Diqqat</span></div>
+      <div><b class="num">{{ c.nocourier }}</b><span>Kuryersiz</span></div>
+      <div><b class="num">{{ c.onway }}</b><span>Yo'lda</span></div>
+      <div class="ok"><b class="num">{{ c.idle_couriers }}</b><span>Bo'sh kuryer</span></div>
     </div>
 
     <div class="body" :class="{ detail: mobileDetail }">
@@ -107,11 +108,10 @@ const hasFilters = computed(() => !!(courierId.value || ui.restaurantId || dq.va
       <section class="list">
         <div class="chips">
           <Chip v-for="x in CHIPS" :key="x.k" :on="chip === x.k" :class="{ warnchip: x.warn && c?.[x.n] }" :n="c?.[x.n] ?? 0" @click="chip = x.k">{{ x.l }}</Chip>
-        </div>
-        <div v-if="chip === 'done'" class="chips sm"><Chip v-for="x in SUBS" :key="x.k" :on="sub === x.k" :n="subN(x.k) ?? 0" @click="sub = x.k">{{ x.l }}</Chip></div>
-        <div class="filters">
-          <select v-model="courierId" class="inp"><option value="">Kuryer bo'yicha</option><option v-for="k in couriers || []" :key="k.id" :value="k.id">{{ k.name }}</option></select>
-          <select class="inp" :value="ui.restaurantId ?? ''" @change="ui.restaurantId = ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null">
+          <template v-if="chip === 'done'"><span class="brk" /><Chip v-for="x in SUBS" :key="x.k" class="subchip" :on="sub === x.k" :n="subN(x.k) ?? 0" @click="sub = x.k">{{ x.l }}</Chip></template>
+          <span class="brk" />
+          <select v-model="courierId" class="pillsel"><option value="">Kuryer bo'yicha</option><option v-for="k in couriers || []" :key="k.id" :value="k.id">{{ k.name }}</option></select>
+          <select class="pillsel" :value="ui.restaurantId ?? ''" @change="ui.restaurantId = ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null">
             <option value="">Restoran bo'yicha</option><option v-for="r in rs.items" :key="r.id" :value="r.id">{{ r.name }}</option></select>
         </div>
 
@@ -122,16 +122,16 @@ const hasFilters = computed(() => !!(courierId.value || ui.restaurantId || dq.va
             <button v-for="o in items" :key="o.id" class="card" :class="{ on: o.id === active, att: o.attention }" @click="open(o.id)">
               <div class="l1"><b class="num">#{{ o.id }}</b><span class="faint num">{{ hm(o.created_at) }}</span><span class="sp" /><Pill :tone="o.status_color">{{ o.pay_pending ? "To'lov kutilmoqda" : o.status_text }}</Pill></div>
               <div class="l2"><span class="nm">{{ o.customer_name || '—' }}</span><span v-if="isActive(o)" class="tm num" :class="{ red: isLate(o) }">{{ timer(o) }}</span><span v-else-if="o.delivery_minutes != null" class="tm num faint">{{ o.delivery_minutes }} daq</span></div>
-              <div class="l3"><span class="sub">{{ o.restaurant.name }} · <Icon name="bike" :size="12" /> {{ o.courier ? o.courier.name : 'kuryer yo\'q' }}</span><b class="num">{{ money(o.total) }} so'm</b></div>
-              <div v-if="o.attention" class="l4 att">{{ o.attention }}</div>
-              <div v-else-if="o.cancel_reason" class="l4 can">{{ o.cancel_reason }}</div>
+              <div class="l3"><span class="sub">{{ o.restaurant.name }} · <Icon name="bike" :size="12" class="bk" /> <span :class="{ red: !o.courier }">{{ o.courier ? o.courier.name : 'kuryer yo\'q' }}</span></span><b class="num">{{ money(o.total) }} so'm</b></div>
+              <div v-if="o.attention" class="l4 att"><Icon name="ban" :size="13" /> {{ o.attention }}</div>
+              <div v-else-if="o.cancel_reason" class="l4 can"><Icon name="ban" :size="13" /> {{ o.cancel_reason }}</div>
             </button>
             <Empty v-if="!items.length" :title="dq ? 'Hech narsa topilmadi' : 'Buyurtma topilmadi'" :text="hasFilters ? 'Filtrlarni o\'zgartirib ko\'ring' : 'Yangi buyurtma kelganda shu yerda paydo bo\'ladi'" />
           </template>
         </div>
 
-        <div class="pager"><Btn sm :disabled="page <= 1" @click="page--">‹ Oldingi</Btn><span class="num">{{ page }} / {{ totalPages }}</span><Btn sm :disabled="page >= totalPages" @click="page++">Keyingi ›</Btn></div>
-        <div class="foot"><span>{{ data?.total ?? 0 }} ta buyurtma</span><span class="sp" /><span class="kb">↑↓ tanlash · / qidiruv</span></div>
+        <div v-if="totalPages > 1" class="pager"><button :disabled="page <= 1" @click="page--">‹ Oldingi</button><span class="num">{{ page }} / {{ totalPages }}</span><button :disabled="page >= totalPages" @click="page++">Keyingi ›</button></div>
+        <div class="foot"><span>{{ data?.total ?? 0 }} ta buyurtma</span><span class="sp" /><span class="kb"><kbd>↑↓</kbd> tanlash</span><span class="kb"><kbd>/</kbd> qidiruv</span><span class="kb"><kbd>1-7</kbd> filtr</span></div>
       </section>
 
       <!-- O'ng: tafsilot -->
@@ -152,39 +152,47 @@ const hasFilters = computed(() => !!(courierId.value || ui.restaurantId || dq.va
 </template>
 
 <style scoped>
-.wrap{height:100%;display:flex;flex-direction:column;min-height:0}
-.bar{display:flex;gap:16px;align-items:center;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
-.srch{position:relative;flex:1;min-width:240px;max-width:560px}.srch :deep(svg){position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint)}
-.srch .inp{width:100%;padding-left:32px;height:38px}
-.kpis{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.kpis div{padding:6px 18px;border-left:1px solid var(--line-2);display:flex;flex-direction:column;align-items:flex-start;min-width:84px}.kpis div:first-child{border-left:0}
-.kpis span{font-size:11.5px;color:var(--muted);white-space:nowrap}.kpis b{font-size:19px;line-height:1.2}
+.wrap{height:100%;display:flex;flex-direction:column;min-height:0;padding:14px 14px 13px;gap:15px}
+.srch{position:relative;flex:0 1 446px;min-width:120px;margin-left:6px}.srch :deep(svg){position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--faint)}
+.srch .inp{width:100%;padding-left:34px;height:38px;border-radius:8px;font-size:14px}
+.kpis{display:flex;align-self:flex-start;flex:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kpis div{padding:8px 13px 7px;border-left:1px solid var(--line);display:flex;flex-direction:column;align-items:flex-start;gap:2px}.kpis div:first-child{border-left:0}
+.kpis b{font-size:20px;line-height:1.2;font-weight:700}.kpis span{font-size:12.5px;color:var(--muted);white-space:nowrap;line-height:1.3}
 .kpis .warn b{color:var(--red)}.kpis .ok b{color:var(--teal)}
-.body{flex:1;min-height:0;display:grid;grid-template-columns:350px 1fr;gap:14px;padding:14px 20px 16px}
-.list{background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
-.chips{display:flex;flex-wrap:wrap;gap:6px;padding:12px 12px 4px}.chips.sm{padding-top:2px}
+.body{flex:1;min-height:0;display:grid;grid-template-columns:418px 1fr;gap:14px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 11px 9px;border-bottom:1px solid var(--line);flex:none}
+.brk{flex-basis:100%;height:0}
+.subchip{height:20px;font-size:12px;padding:0 8px}.subchip :deep(b){font-size:11px}
 .warnchip :deep(b){color:var(--red)}
-.filters{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 12px 10px;border-bottom:1px solid var(--line-2)}.filters .inp{width:100%;font-size:12.5px}
+.pillsel{height:26px;border-radius:999px;border:1px solid var(--line);background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238A9AA0'/%3E%3C/svg%3E") no-repeat right 9px center;appearance:none;-webkit-appearance:none;padding:0 24px 0 10px;font-size:13px;font-weight:500;max-width:100%;color:var(--ink)}
 .scroll{flex:1;overflow:auto;min-height:0}
-.card{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line-2);background:transparent;padding:10px 14px;border-left:3px solid transparent}
-.card:hover{background:var(--surface-2)}.card.on{background:var(--brand-soft);border-left-color:var(--brand)}.card.att{border-left-color:var(--red)}
-.l1,.l2,.l3{display:flex;align-items:center;gap:8px}.l2{margin:3px 0 2px}.l3{justify-content:space-between;gap:10px}
-.nm{font-weight:600;font-size:13.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tm{font-weight:700;font-size:13px;color:var(--amber)}.tm.red{color:var(--red)}.tm.faint{color:var(--faint)}
-.l3 .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.l3 b{font-size:12.5px;white-space:nowrap}
-.l4{font-size:12px;margin-top:3px;font-weight:600}.l4.att{color:var(--red)}.l4.can{color:var(--red);opacity:.85}
-.pager{display:flex;justify-content:center;align-items:center;gap:10px;padding:8px;border-top:1px solid var(--line-2);font-size:12.5px}
-.foot{display:flex;padding:7px 14px;border-top:1px solid var(--line-2);font-size:11.5px;color:var(--muted)}
-.det{display:flex;flex-direction:column;min-height:0;min-width:0}
-.otabs{display:flex;gap:4px;align-items:flex-end;margin-bottom:-1px;overflow-x:auto;flex:none}
-.ot{display:inline-flex;align-items:center;gap:6px;padding:6px 8px 6px 12px;border:1px solid var(--line);border-bottom:0;border-radius:10px 10px 0 0;background:var(--surface-2);font-size:12.5px;cursor:pointer;max-width:200px;color:var(--muted)}
-.ot.on{background:var(--surface);color:var(--ink)}.ot i{font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px}
+.card{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line-2);background:transparent;padding:11px 12px 11px 14px}
+.card:hover{background:var(--surface-2)}.card.on{background:var(--brand-soft)}
+.l1,.l2,.l3{display:flex;align-items:center;gap:8px}.l2{margin:4px 0 3px}.l3{justify-content:space-between;gap:10px;align-items:flex-end}
+.l1 b{font-size:16px;font-weight:700}.l1 .faint{font-size:12.5px}
+.nm{font-weight:500;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm{font-weight:600;font-size:13px;color:var(--amber)}.tm.red{color:var(--red)}.tm.faint{color:var(--faint);font-weight:500}
+.l3 .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1 1 0;font-size:12.5px;color:var(--faint)}.l3 b{font-size:13px;font-weight:500;flex:0 1 auto;text-align:right;color:var(--ink)}
+.bk{color:var(--red);vertical-align:-2px}
+.l4{display:flex;align-items:center;gap:4px;font-size:12.5px;margin-top:4px;font-weight:500}.l4.att{color:var(--red)}.l4.can{color:var(--red)}
+.pager{display:flex;justify-content:center;align-items:center;gap:8px;padding:8px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);flex:none}
+.pager button{height:24px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:0 10px;font-size:12.5px;color:var(--ink)}.pager button:disabled{color:var(--faint);cursor:default}
+.foot{display:flex;align-items:center;gap:12px;padding:0 12px;height:34px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);flex:none}
+.kb{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+kbd{font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 4px;background:var(--surface-2);line-height:16px}
+.det{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.otabs{display:flex;gap:2px;align-items:flex-end;overflow-x:auto;flex:none;border-bottom:1px solid var(--line);padding:0 12px;height:34px;background:var(--surface)}
+.ot{display:inline-flex;align-items:center;gap:6px;height:33px;padding:0 6px 0 8px;border-bottom:2px solid transparent;font-size:13px;cursor:pointer;max-width:230px;color:var(--muted);white-space:nowrap}
+.ot b{font-style:italic;font-weight:700;color:var(--ink)}
+.ot.on{border-bottom-color:var(--brand)}.ot i{opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
 .ot button{border:0;background:transparent;display:inline-flex;padding:2px;border-radius:5px;color:var(--faint)}.ot button:hover{background:var(--grey-soft)}
-.back{display:none;border:0;background:transparent;font-weight:600;color:var(--blue);align-items:center;padding:6px 8px}
+.back{display:none;border:0;background:transparent;font-weight:600;color:var(--link);align-items:center;padding:6px 8px}
 .dscroll{flex:1;overflow:auto;min-height:0}
 @media (max-width:1000px){
-  .body{grid-template-columns:1fr;padding:10px 12px}
+  .wrap{padding:10px 12px;gap:10px}
+  .body{grid-template-columns:1fr}
   .body:not(.detail) .det{display:none}.body.detail .list{display:none}
-  .back{display:inline-flex}.bar{padding:10px 12px}.kpis{width:100%;overflow:auto}
+  .back{display:inline-flex}.kpis{align-self:stretch;overflow:auto}
 }
 </style>

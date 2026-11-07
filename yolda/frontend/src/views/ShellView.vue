@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import logo from "@/assets/logo.png"
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import { useLiveStore, onLive } from '@/stores/live'
 import { useRestaurantsStore } from '@/stores/restaurants'
 import { useAlertsStore } from '@/stores/alerts'
-import { hm } from '@/utils/format'
 import { useDrawer } from '@/utils/drawer'
 import { moneyS } from '@/utils/format'
 import PeriodPicker from '@/components/PeriodPicker.vue'
@@ -19,9 +18,6 @@ import RestaurantDrawer from '@/components/drawers/RestaurantDrawer.vue'
 const route = useRoute(), router = useRouter()
 const auth = useAuthStore(), ui = useUiStore(), live = useLiveStore(), rs = useRestaurantsStore(), alerts = useAlertsStore()
 const drawer = useDrawer()
-const now = ref(new Date())
-let tick: any
-const menu = ref(false)
 
 const nav = computed(() => [
   { to: '/', icon: 'gauge', label: 'Umumiy holat' },
@@ -62,11 +58,10 @@ function reloadAlerts() { clearTimeout(alertTimer); alertTimer = setTimeout(() =
 
 onMounted(async () => {
   syncFromRoute()
-  tick = setInterval(() => (now.value = new Date()), 15000)
   live.connect()
   await Promise.allSettled([rs.load(), alerts.load()])
 })
-onUnmounted(() => { clearInterval(tick); live.disconnect() })
+onUnmounted(() => { live.disconnect() })
 
 // Global toastlar va store yangilanishlari
 onLive('order.created', (o) => {
@@ -82,9 +77,7 @@ onLive('restaurant.updated', (r) => rs.patch(r))
 onLive('alerts.changed', reloadAlerts)
 
 const meta = computed(() => route.meta as any)
-const periodLabel = computed(() => '')
 const logout = () => { auth.logout(); live.disconnect(); router.replace('/login') }
-const time = computed(() => hm(now.value))
 </script>
 
 <template>
@@ -92,35 +85,40 @@ const time = computed(() => hm(now.value))
     <div class="scrim" @click="ui.sidebarOpen = false" />
     <aside class="side">
       <div class="brand">
-        <span class="logo"><img :src="logo" alt="Tez-yetkaz" /></span>
-        <small>Operator paneli</small>
+        <img class="logo" :src="logo" alt="Tez-yetkaz" />
+        <span class="sp" />
+        <Icon name="pushpin" :size="16" class="pinic" />
       </div>
       <nav>
         <template v-for="(n, i) in nav" :key="i">
           <hr v-if="n.sep" />
           <div v-else-if="n.head" class="nh">{{ n.head }}</div>
           <RouterLink v-else :to="{ path: n.to, query: ui.restaurantId && !auth.isStaff ? { r: ui.restaurantId } : {} }" class="nl" :class="{ act: n.to === '/' ? route.path === '/' : route.path.startsWith(n.to) }">
-            <Icon :name="n.icon" /><span>{{ n.label }}</span>
+            <Icon :name="n.icon" :size="19" /><span>{{ n.label }}</span>
             <span class="sp" /><Badge v-if="n.badge" :n="alerts.count" />
           </RouterLink>
         </template>
       </nav>
-      <div class="me" @click="menu = !menu">
-        <Avatar :seed="auth.user?.id || 3" :size="34" />
-        <div class="mi"><b>{{ auth.user?.full_name }}</b><small>{{ auth.roleLabel }}</small></div>
-        <div v-if="menu" class="menu"><button @click.stop="logout"><Icon name="logout" :size="16" /> Chiqish</button></div>
+      <div class="me">
+        <div class="mrow">
+          <span class="av">{{ (auth.user?.full_name || '?').trim().charAt(0).toUpperCase() }}</span>
+          <div class="mi"><b>{{ auth.user?.full_name }}</b><small>{{ auth.roleLabel }}</small></div>
+        </div>
+        <button class="out" @click="logout">Chiqish</button>
       </div>
     </aside>
 
     <div class="main">
       <header class="top">
         <IconBtn class="burger" icon="menu" title="Menyu" @click="ui.sidebarOpen = true" />
-        <div class="ttl"><h1>{{ meta.title }}</h1><p>{{ meta.sub }}</p></div>
+        <h1>{{ meta.title }}</h1>
+        <span class="live" :class="{ off: !live.connected }"><i />{{ live.connected ? 'online' : 'offline' }}</span>
+        <div id="hdr-slot" class="slot" />
         <div class="sp" />
         <PeriodPicker v-if="meta.period" />
         <RestaurantPicker />
-        <span class="clock"><i :class="{ off: !live.connected }" /><span class="ct">{{ live.connected ? time + ' · jonli' : 'ulanish yo\'q' }}</span></span>
         <IconBtn :icon="ui.theme === 'dark' ? 'sun' : 'moon'" title="Mavzu" @click="ui.toggleTheme()" />
+        <RouterLink to="/alerts" class="bell" title="Ogohlantirishlar"><Icon name="bell" :size="16" /><b v-if="alerts.count">{{ alerts.count }}</b></RouterLink>
       </header>
       <main class="content" :class="{ flush: meta.flush }"><RouterView :key="route.path" /></main>
     </div>
@@ -132,38 +130,43 @@ const time = computed(() => hm(now.value))
 </template>
 
 <style scoped>
-.shell{display:grid;grid-template-columns:236px 1fr;height:100%;overflow:hidden}
-.side{background:var(--side);color:var(--side-ink);padding:18px 12px 14px;display:flex;flex-direction:column;gap:18px;padding-top:max(18px,env(safe-area-inset-top))}
-.brand{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0 6px}
-.logo{background:#12292F;border-radius:10px;padding:9px 16px;display:flex;align-items:center;justify-content:center}.logo img{height:20px;width:auto;display:block}
-.brand small{font-size:11px;color:var(--side-muted);text-align:center}
-nav{flex:1;display:flex;flex-direction:column;gap:2px;overflow:auto}
-nav .nh{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--side-muted);padding:12px 10px 4px}
-nav hr{border:0;border-top:1px solid var(--side-active);margin:8px 0;width:100%}
-.nl{position:relative;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:14px;font-weight:500;color:var(--side-ink)}
-.nl:hover,.nl.act{background:var(--side-active)}
-.nl.act{color:#fff}.nl.act::before{content:'';position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
-.me{position:relative;border-top:1px solid var(--side-active);padding-top:12px;display:flex;gap:10px;align-items:center;cursor:pointer}
-.mi b{display:block;font-size:13px;color:#fff;font-weight:600}.mi small{font-size:11.5px;color:var(--side-muted)}
-.menu{position:absolute;bottom:56px;left:0;right:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:var(--shadow)}
-.menu button{width:100%;border:0;background:transparent;display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:7px;color:var(--ink);font-weight:600}
-.menu button:hover{background:var(--surface-2)}
+.shell{display:grid;grid-template-columns:218px 1fr;height:100%;overflow:hidden}
+.side{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+.brand{height:58px;flex:none;display:flex;align-items:center;gap:8px;padding:0 20px 0 10px;border-bottom:1px solid var(--side-line);box-sizing:border-box}
+.logo{width:109px;height:auto;display:block}
+.pinic{color:var(--brand);transform:rotate(35deg)}
+nav{flex:1;display:flex;flex-direction:column;gap:4px;overflow:auto;padding:8px 8px 8px 4px}
+nav .nh{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--side-muted);padding:12px 12px 4px}
+nav hr{border:0;border-top:1px solid var(--side-line);margin:6px 0;width:100%}
+.nl{position:relative;display:flex;align-items:center;gap:11px;height:40px;padding:0 10px 0 13px;border-radius:8px;font-size:15px;font-weight:500;color:var(--side-ink);flex:none}
+.nl:hover{background:rgba(255,255,255,.06)}
+.nl.act{background:var(--side-active);color:#fff;font-weight:600}.nl.act::before{content:'';position:absolute;left:-4px;top:2px;bottom:2px;width:4px;border-radius:0 3px 3px 0;background:var(--brand)}
+.me{border-top:1px solid var(--side-line);padding:14px 6px 8px;display:flex;flex-direction:column;gap:12px}
+.mrow{display:flex;gap:9px;align-items:center;padding:0 2px}
+.av{width:32px;height:32px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
+.mi{min-width:0}.mi b{display:block;font-size:14px;color:#fff;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mi small{font-size:12px;color:var(--side-muted);line-height:1.2}
+.out{height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:14px;font-weight:500}.out:hover{background:rgba(255,255,255,.12)}
 .main{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%}
-.top{height:64px;flex:none;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 20px;padding-top:env(safe-area-inset-top);box-sizing:content-box}
-.ttl h1{font-size:19px;font-weight:700;line-height:1.2}.ttl p{font-size:12.5px;color:var(--muted)}
+.top{height:58px;flex:none;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 16px;padding-top:env(safe-area-inset-top);box-sizing:content-box}
+.top h1{font-size:18px;font-weight:700;line-height:1.2;white-space:nowrap;margin-right:2px}
+.live{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px;border-radius:999px;background:var(--primary-soft);color:var(--teal);font-size:12px;font-weight:500}
+.live i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.live.off{background:var(--red-soft);color:var(--red)}
+.slot{display:contents}
+.bell{position:relative;width:34px;height:34px;border-radius:8px;border:1px solid color-mix(in srgb,var(--primary) 55%,var(--line));color:var(--teal);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.bell:hover{background:var(--primary-soft)}
+.bell b{position:absolute;top:-6px;right:-6px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-size:10.5px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 .burger{display:none}
-.clock{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);white-space:nowrap}
-.clock i{width:8px;height:8px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}.clock i.off{background:var(--red);animation:none}
 .content{flex:1;min-height:0;overflow:auto;position:relative;z-index:0;padding-bottom:env(safe-area-inset-bottom)}
 .content.flush{overflow:hidden;display:flex;flex-direction:column}.content.flush>*{flex:1;min-height:0}
 .scrim{display:none}
 @media (max-width:860px){
   .shell{grid-template-columns:1fr}
-  .side{position:fixed;left:0;top:0;bottom:0;width:250px;z-index:80;transform:translateX(-100%);transition:transform .25s}
+  .side{position:fixed;left:0;top:0;bottom:0;width:240px;z-index:80;transform:translateX(-100%);transition:transform .25s}
   .open .side{transform:none}
   .open .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:70}
-  .burger{display:inline-flex}.ttl p,.ct{display:none}
+  .burger{display:inline-flex}
   .top{padding:0 12px;gap:8px}
 }
-@media (max-width:520px){.ttl h1{font-size:16px}.clock{display:none}}
+@media (max-width:520px){.top h1{font-size:16px}.live{display:none}}
 </style>

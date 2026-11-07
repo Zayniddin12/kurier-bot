@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { useUiStore } from '@/stores/ui'
 const ui = useUiStore()
+const bg = (c: string) => (c === 'var(--brand)' ? 'var(--side)' : c === 'var(--teal)' ? 'var(--primary)' : c)
 </script>
 <template>
   <div class="tw">
-    <div v-for="t in ui.toasts" :key="t.id" class="toast"><i :style="{ background: t.color }" />{{ t.text }}</div>
+    <div v-for="t in ui.toasts" :key="t.id" class="toast" :style="{ background: bg(t.color) }">{{ t.text }}</div>
   </div>
 </template>
 <style scoped>
-.tw{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;z-index:200;pointer-events:none}
-.toast{background:var(--ink);color:var(--surface);border-radius:11px;padding:10px 14px;font-size:13px;max-width:340px;display:flex;gap:9px;align-items:flex-start;animation:up .25s;box-shadow:var(--shadow)}
-.toast i{width:8px;height:8px;border-radius:50%;flex:none;margin-top:5px}
-@keyframes up{from{transform:translateY(14px);opacity:0}}
+.tw{position:fixed;left:50%;transform:translateX(-50%);top:calc(16px + env(safe-area-inset-top));display:flex;flex-direction:column;align-items:center;gap:8px;z-index:200;pointer-events:none;width:max-content;max-width:calc(100vw - 24px)}
+.toast{color:#fff;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;min-width:240px;max-width:520px;animation:up .25s;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+@keyframes up{from{transform:translateY(-10px);opacity:0}}
 </style>
