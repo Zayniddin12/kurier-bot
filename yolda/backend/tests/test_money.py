@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from datetime import datetime, timedelta, timezone
 
 from app.services.eta import compute_eta
-from app.services.ledger import courier_earning, delivery_fee_for, platform_commission, salary_math
+from app.services.ledger import courier_earning, delivery_fee_for, salary_math
 
 
 def test_delivery_fee():
@@ -12,11 +12,10 @@ def test_delivery_fee():
     assert delivery_fee_for(1.0) == 9000       # 8500 -> 9000
 
 
-def test_courier_earning_and_commission():
-    assert courier_earning(12000) == 10200
-    assert platform_commission(12000) == 1800
-    assert courier_earning(9000) + platform_commission(9000) == 9000
-    assert courier_earning(15000) == 12800     # 12750 -> 12800
+def test_courier_earning_without_commission():
+    assert courier_earning(12000) == 12000
+    assert courier_earning(9000) == 9000
+    assert courier_earning(15000) == 15000
 
 
 def test_salary_formula():

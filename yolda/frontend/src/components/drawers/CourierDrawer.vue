@@ -75,7 +75,7 @@ const stateBox = computed(() => {
           <dt>To'lov usuli</dt><dd>{{ o.payment.method }}</dd><dt>Holati</dt><dd><Pill :tone="o.payment.status_color">{{ o.payment.status_text }}</Pill></dd>
           <template v-if="o.payment.method === 'Naqd'"><dt>Kuryer mijozdan oladi</dt><dd class="num">{{ moneyS(o.payment.courier_collects) }}</dd><dt>Kompaniyaga topshiradi</dt><dd class="num">{{ moneyS(o.payment.company_due) }}</dd></template>
           <template v-else><dt>Mijozdan yechildi</dt><dd class="num">{{ moneyS(o.total) }}</dd></template>
-          <dt>Kuryer haqi</dt><dd class="num">{{ moneyS(o.payment.courier_fee) }}</dd><dt>Platforma komissiyasi</dt><dd class="num">{{ moneyS(o.payment.commission) }}</dd>
+          <dt>Kuryer haqi</dt><dd class="num">{{ moneyS(o.payment.courier_fee) }}</dd>
         </dl>
         <div class="sec-title">Nima olib ketmoqda</div>
         <table class="items"><tbody>

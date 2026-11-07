@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     # Biznes konstantalari
     SLA: int = 45
     CASH_LIMIT: int = 400_000
-    COMMISSION: float = 0.15
-    VENDOR_COMMISSION: float = 0.15  # restoran buyurtma summasidan platforma komissiyasi
+    COMMISSION: float = 0.0  # platforma komissiyasi hisoblanmaydi
+    VENDOR_COMMISSION: float = 0.0  # restoran komissiyasi hisoblanmaydi
     BONUS_PER_10: int = 20_000
     LATE_FINE: int = 5_000
 

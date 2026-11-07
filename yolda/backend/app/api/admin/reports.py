@@ -25,17 +25,16 @@ async def income(days: int = 1, u: User = Depends(ops_user), db: AsyncSession = 
     start = t0 - timedelta(days=days - 1)
     orders = (await db.execute(select(Order).where(Order.status == "delivered", Order.delivered_at >= start,
                                                    Order.courier_id.is_not(None)))).scalars().all()
-    agg = defaultdict(lambda: {"delivered": 0, "amount": 0, "cash": 0, "earned": 0, "commission": 0})
+    agg = defaultdict(lambda: {"delivered": 0, "amount": 0, "cash": 0, "earned": 0})
     for o in orders:
         a = agg[o.courier_id]
         a["delivered"] += 1
         a["amount"] += o.total
         a["cash"] += o.total if o.pay_method == "Naqd" else 0
         a["earned"] += ledger.courier_earning(o.delivery_fee)
-        a["commission"] += ledger.platform_commission(o.delivery_fee)
     cs = {c.id: c for c in (await db.execute(select(Courier).where(Courier.id.in_(list(agg))))).scalars()} if agg else {}
     items = [{"courier": courier_brief(cs[i]), **a} for i, a in sorted(agg.items(), key=lambda kv: -kv[1]["earned"])]
-    totals = {k: sum(x[k] for x in items) for k in ("delivered", "amount", "cash", "earned", "commission")}
+    totals = {k: sum(x[k] for x in items) for k in ("delivered", "amount", "cash", "earned")}
     return {"from": start.date().isoformat(), "to": t0.date().isoformat(), "days": days, "items": items, "totals": totals}
 
 
@@ -49,7 +48,7 @@ async def salary(u: User = Depends(ops_user), db: AsyncSession = Depends(get_db)
                       "earned": s["earned"], "bonus": s["bonus"], "fine": s["fine"], "late": s["late"],
                       "balance": c.balance, "payable": s["payable"]})
     return {"items": items, "total_payable": sum(i["payable"] for i in items),
-            "rules": {"commission": settings.COMMISSION, "bonus_per_10": settings.BONUS_PER_10,
+            "rules": {"bonus_per_10": settings.BONUS_PER_10,
                       "late_fine": settings.LATE_FINE, "sla": settings.SLA, "cash_limit": settings.CASH_LIMIT}}
 
 

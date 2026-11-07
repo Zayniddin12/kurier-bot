@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from app.config import ISSUES, ORDER_STATUS, PAY_STATUS, TRANSPORTS, settings
-from app.services.ledger import courier_earning, platform_commission
+from app.services.ledger import courier_earning
 
 ISSUE_BUTTONS = {
     "noanswer": ["call_customer", "resolve", "cancel"],
@@ -90,7 +90,7 @@ def money_split(o) -> dict:
     fee = courier_earning(o.delivery_fee)
     d = {"method": o.pay_method, "status": o.pay_status, "status_text": PAY_STATUS[o.pay_status][0],
          "status_color": PAY_STATUS[o.pay_status][1], "subtotal": o.subtotal, "delivery_fee": o.delivery_fee,
-         "total": o.total, "courier_fee": fee, "commission": platform_commission(o.delivery_fee),
+         "total": o.total, "courier_fee": fee,
          "courier_collects": o.pay_method == "Naqd", "company_due": (o.total - fee) if o.pay_method == "Naqd" else 0}
     return d
 

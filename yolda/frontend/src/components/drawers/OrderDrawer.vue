@@ -67,7 +67,6 @@ const stars = (n: number) => '★'.repeat(n) + '☆'.repeat(5 - n)
         <dt>Holati</dt><dd><Pill :tone="pay.status_color">{{ pay.status_text }}</Pill></dd>
         <template v-if="pay.method === 'Naqd'"><dt>Kuryer mijozdan oladi</dt><dd class="num">{{ moneyS(pay.courier_collects) }}</dd><dt>Kompaniyaga topshiradi</dt><dd class="num">{{ moneyS(pay.company_due) }}</dd></template>
         <dt>Kuryer haqi</dt><dd class="num">{{ moneyS(pay.courier_fee) }}</dd>
-        <dt>Platforma komissiyasi</dt><dd class="num">{{ moneyS(pay.commission) }}</dd>
       </dl>
 
       <div class="sec-title">Tarkibi</div>

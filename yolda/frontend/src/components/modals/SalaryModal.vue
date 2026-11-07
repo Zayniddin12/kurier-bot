@@ -18,7 +18,7 @@ async function all() {
 </script>
 <template>
   <Modal wide title="Kuryerlar maoshini hisoblash" sub="Har bir kuryer uchun oxirgi hisob-kitobdan buyon" @close="emit('close')">
-    <div v-if="d" class="box rules">Daromad har yetkazishda balansga avtomatik yoziladi: yetkazish haqining {{ Math.round((1 - d.rules.commission) * 100) }}% i. Har 10 ta yetkazish uchun bonus {{ money(d.rules.bonus_per_10) }} so'm, {{ d.rules.sla }} daqiqadan kechikkan har bir buyurtma uchun jarima {{ money(d.rules.late_fine) }} so'm. <b>To'lanadi</b> = balans + bonus − jarima; naqd qarzi bo'lsa avval qarz yopiladi.</div>
+    <div v-if="d" class="box rules">Daromad har yetkazishda balansga avtomatik yoziladi: yetkazish haqining to'liq summasi. Har 10 ta yetkazish uchun bonus {{ money(d.rules.bonus_per_10) }} so'm, {{ d.rules.sla }} daqiqadan kechikkan har bir buyurtma uchun jarima {{ money(d.rules.late_fine) }} so'm. <b>To'lanadi</b> = balans + bonus − jarima; naqd qarzi bo'lsa avval qarz yopiladi.</div>
     <DataTable v-if="d" style="margin-top:10px">
       <thead><tr><th>Kuryer</th><th>Oxirgi hisob</th><th class="r">Yetkazdi</th><th class="r">Daromad</th><th class="r">Bonus (+)</th><th class="r">Jarima (−)</th><th class="r">Balans</th><th class="r">To'lanadi</th><th /></tr></thead>
       <tbody><tr v-for="r in d.items" :key="r.courier.id">

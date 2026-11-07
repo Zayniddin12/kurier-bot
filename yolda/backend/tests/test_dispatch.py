@@ -137,9 +137,8 @@ async def test_full_flow_ledger_and_queue(db):
     assert c.balance == sum(e.amount for e in entries)
     assert next(e for e in entries if e.type == "cash").amount == -o.total
     ve = (await db.execute(select(VendorLedgerEntry).where(VendorLedgerEntry.restaurant_id == r.id))).scalars().all()
-    assert {e.type for e in ve} == {"payment", "commission"}
+    assert {e.type for e in ve} == {"payment"}
     assert next(e for e in ve if e.type == "payment").amount == o.subtotal
-    assert next(e for e in ve if e.type == "commission").amount == -ledger.vendor_commission(o.subtotal)
 
 
 async def test_vehicle_issue_auto_reassign(db):

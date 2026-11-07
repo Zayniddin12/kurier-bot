@@ -174,7 +174,7 @@ const tabs = computed(() => o.value ? [
         <table class="tbl"><tbody>
           <tr v-for="(x, i) in o.payments" :key="i"><td><b>{{ x.label }}</b><div class="sub">{{ x.note || '' }}</div></td><td class="num sub">{{ dmyhm(x.at) }}</td><td class="r num" :class="{ red: x.amount < 0 }">{{ money(x.amount) }} so'm</td></tr>
         </tbody></table>
-        <dl class="sum"><dt>Kuryer haqi</dt><dd class="num">{{ moneyS(o.payment.courier_fee) }}</dd><dt>Platforma komissiyasi</dt><dd class="num">{{ moneyS(o.payment.commission) }}</dd>
+        <dl class="sum"><dt>Kuryer haqi</dt><dd class="num">{{ moneyS(o.payment.courier_fee) }}</dd>
           <template v-if="o.payment.courier_collects"><dt>Kuryer mijozdan oladi</dt><dd class="num">{{ moneyS(o.total) }}</dd><dt>Kompaniyaga topshiradi</dt><dd class="num">{{ moneyS(o.payment.company_due) }}</dd></template></dl>
       </div>
 
