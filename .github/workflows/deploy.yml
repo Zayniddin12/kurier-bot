@@ -29,6 +29,7 @@ jobs:
             cd yolda
             FILES="-f docker-compose.yml"
             [ -f docker-compose.server.override.yml ] && FILES="$FILES -f docker-compose.server.override.yml"
+            # frontend/backend qayta yig'iladi; muvaffaqiyatsiz bo'lsa 'script_stop' to'xtatadi
             docker compose $FILES up -d --build --remove-orphans
             docker image prune -f
             docker compose $FILES ps
