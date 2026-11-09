@@ -12,7 +12,7 @@ export function useDrawer() {
     return { kind: kind as 'order' | 'courier' | 'restaurant', id: Number(id) }
   })
   const open = (kind: 'order' | 'courier' | 'restaurant', id: number) =>
-    router.push({ query: { ...route.query, drawer: `${kind}:${id}` } })
+    kind === 'restaurant' ? router.push(`/restaurants/${id}`) : router.push({ query: { ...route.query, drawer: `${kind}:${id}` } })
   const close = () => {
     const q = { ...route.query }
     delete q.drawer

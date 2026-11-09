@@ -13,7 +13,6 @@ import PeriodPicker from '@/components/PeriodPicker.vue'
 import RestaurantPicker from '@/components/RestaurantPicker.vue'
 import CourierDrawer from '@/components/drawers/CourierDrawer.vue'
 import OrderDrawer from '@/components/drawers/OrderDrawer.vue'
-import RestaurantDrawer from '@/components/drawers/RestaurantDrawer.vue'
 
 const route = useRoute(), router = useRouter()
 const auth = useAuthStore(), ui = useUiStore(), live = useLiveStore(), rs = useRestaurantsStore(), alerts = useAlertsStore()
@@ -125,7 +124,6 @@ const logout = () => { auth.logout(); live.disconnect(); router.replace('/login'
 
     <CourierDrawer v-if="drawer.current.value?.kind === 'courier'" :id="drawer.current.value.id" @close="drawer.close" />
     <OrderDrawer v-else-if="drawer.current.value?.kind === 'order'" :id="drawer.current.value.id" @close="drawer.close" />
-    <RestaurantDrawer v-else-if="drawer.current.value?.kind === 'restaurant'" :id="drawer.current.value.id" @close="drawer.close" />
   </div>
 </template>
 

@@ -11,7 +11,7 @@ const map: Record<string, any> = {
   alert: L.TriangleAlert, clock: L.Clock, utensils: L.Utensils, star: L.Star, building: L.Building2, box: L.Package,
   chevleft: L.ChevronLeft, chevright: L.ChevronRight, key: L.KeyRound, volume: L.Volume2, mute: L.VolumeOff, refresh: L.RefreshCw,
   truck: L.Truck, wallet: L.Wallet, receipt: L.Receipt, edit: L.Pencil, ban: L.Ban, note: L.StickyNote, mail: L.Mail,
-  headset: L.Headset, list: L.List, pushpin: L.Pin, chevup: L.ChevronUp,
+  headset: L.Headset, list: L.List, monitor: L.Monitor, tag: L.Tag, image: L.Image, folder: L.Folder, file: L.FileText, layers: L.Layers, history: L.History, trash: L.Trash2, pushpin: L.Pin, chevup: L.ChevronUp,
 }
 const C = computed(() => map[props.name] || L.Circle)
 </script>
