@@ -1,4 +1,5 @@
 """Operator uchun "Buyurtmalar navbati" sahifasi: ro'yxat, hisoblagichlar, tafsilot va qo'lda boshqarish."""
+import secrets
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, Query
@@ -11,12 +12,16 @@ from app.deps import ops_user
 from app.errors import ApiError
 from app.models import (BlockedCustomer, Courier, CustomerNote, LedgerEntry, Order, OrderIssue, OrderLog, OrderOffer,
                         Restaurant, User, VendorLedgerEntry)
-from app.schemas.admin import AssignIn, BlockIn, CustomerNoteIn, OrderNotesIn
+from app.menus import menu_for
+from app.schemas.admin import AssignIn, BlockIn, CustomerNoteIn, OperatorOrderIn, OrderNotesIn
 from app.services import alerts, dispatch, routing, stats
 from app.services.details import order_detail
 from app.services.events import commit, esc, feed
 from app.services.geo import ROAD_FACTOR, haversine
 from app.services.live import courier_changed
+from app.services import orders as osvc
+from app.services.geo import road_km
+from app.services.ledger import delivery_fee_for
 from app.services.orders import OrderError, order_changed, set_payment
 from app.services.serializers import full_name, iso, now_utc, order_row
 
@@ -303,6 +308,55 @@ async def op_detail(db, o: Order) -> dict:
         "can_edit": o.status in ACTIVE, "items_total": sum(i["qty"] * i["price"] for i in d["items"]),
     })
     return d
+
+
+def _menu_items(r: Restaurant) -> list[dict]:
+    return [{"id": i, "name": n, "price": p} for i, (n, p) in enumerate(menu_for(r))]
+
+
+@router.get("/restaurants/{rid}/menu")
+async def restaurant_menu(rid: int, u: User = Depends(ops_user), db: AsyncSession = Depends(get_db)):
+    r = await db.get(Restaurant, rid)
+    if not r:
+        raise ApiError(404, "Restoran topilmadi")
+    return {"restaurant_id": r.id, "items": _menu_items(r)}
+
+
+@router.get("/quote")
+async def quote(restaurant_id: int, lat: float = Query(ge=-90, le=90), lng: float = Query(ge=-180, le=180),
+                u: User = Depends(ops_user), db: AsyncSession = Depends(get_db)):
+    r = await db.get(Restaurant, restaurant_id)
+    if not r:
+        raise ApiError(404, "Restoran topilmadi")
+    km = road_km(r.lat, r.lng, lat, lng)
+    return {"distance_km": km, "delivery_fee": delivery_fee_for(km)}
+
+
+@router.post("/orders", status_code=201)
+async def create_operator_order(body: OperatorOrderIn, u: User = Depends(ops_user), db: AsyncSession = Depends(get_db)):
+    """Operator qo'lda buyurtma yaratadi. To'lov har doim naqd: mijoz kuryerga o'zi to'laydi."""
+    r = await db.get(Restaurant, body.restaurant_id)
+    if not r:
+        raise ApiError(404, "Restoran topilmadi")
+    menu = {m["id"]: m for m in _menu_items(r)}
+    items = []
+    for it in body.items:
+        m = menu.get(it.menu_id)
+        if not m:
+            raise ApiError(422, "Menyuda bunday taom yo'q")
+        items.append({"name": m["name"], "qty": it.qty, "price": m["price"]})
+    ext = f"OP-{now_utc():%y%m%d%H%M%S}-{secrets.token_hex(2).upper()}"
+    try:
+        o, _ = await osvc.create_order(
+            db, r, external_id=ext, customer_name=body.customer_name.strip(), customer_phone=body.customer_phone.strip(),
+            address=body.address.strip(), district=body.district.strip(), lat=body.lat, lng=body.lng, items=items,
+            pay_method="Naqd", note=(body.note or "").strip() or None, delivery_fee=body.delivery_fee)
+    except OrderError as e:
+        raise ApiError(e.status, e.message)
+    o.courier_note = (body.courier_note or "").strip() or None
+    await log(db, o, u, "Buyurtma operator tomonidan yaratildi (naqd)")
+    await commit(db)
+    return await op_detail(db, o)
 
 
 @router.get("/orders/{oid}")

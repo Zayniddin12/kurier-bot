@@ -125,10 +125,13 @@ async def delivered(db, o: Order, c: Courier):
     o.status, o.delivered_at = "delivered", now
     o.delivery_minutes = round((now - o.created_at).total_seconds() / 60) + (o.delay_added_minutes or 0)
     o.is_late = o.delivery_minutes > SLA
-    await ledger.add_entry(db, c, "earn", ledger.courier_earning(o.delivery_fee), o.id, "Yetkazish haqi")
+    fee = ledger.courier_earning(o.delivery_fee)
     if o.pay_method == "Naqd":
+        # kuryer mijozdan butun summani oladi, lekin yetkazish haqi o'zida qoladi — kompaniyaga qarz = jami − yetkazish haqi
         o.pay_status = "collected"
-        await ledger.add_entry(db, c, "cash", -o.total, o.id, "Naqd pul mijozdan olindi")
+        await ledger.add_entry(db, c, "cash", -(o.total - fee), o.id, "Naqd pul mijozdan olindi (yetkazish haqi ayirildi)")
+    else:
+        await ledger.add_entry(db, c, "earn", fee, o.id, "Yetkazish haqi")
     db.add_all(ledger.vendor_entries(o, now))
     await feed(db, f"Yetkazildi: <b>#{o.id}</b> · {esc(o.customer_name)}", "grey", o.restaurant_id)
     await order_changed(db, o, status_changed=True)

@@ -9,10 +9,12 @@ import { useLoad } from '@/utils/useLoad'
 import { hm, money } from '@/utils/format'
 import { SLA } from '@/constants/statuses'
 import OrderPanel from '@/components/operator/OrderPanel.vue'
+import NewOrderModal from '@/components/operator/NewOrderModal.vue'
 
 const ui = useUiStore(), rs = useRestaurantsStore(), route = useRoute(), router = useRouter()
 const chip = ref('all'), sub = ref('all'), courierId = ref(''), q = ref(''), dq = ref(''), page = ref(1)
 const now = ref(Date.now())
+const newOpen = ref(false)
 const searchEl = ref<HTMLInputElement>()
 const opened = ref<{ id: number; label: string }[]>([])
 const active = ref<number | null>(route.query.o ? Number(route.query.o) : null)
@@ -95,6 +97,7 @@ const hasFilters = computed(() => !!(courierId.value || ui.restaurantId || dq.va
     <Teleport to="#hdr-slot">
       <div class="srch"><Icon name="search" :size="16" /><input ref="searchEl" v-model="q" class="inp" placeholder="Qidiruv: № / ism / telefon / restoran  ( / )" /></div>
     </Teleport>
+    <div class="toprow">
     <div class="kpis" v-if="c">
       <div><b class="num">{{ c.active }}</b><span>Faol buyurtma</span></div>
       <div :class="{ warn: c.attention }"><b class="num">{{ c.attention }}</b><span>Diqqat</span></div>
@@ -102,6 +105,10 @@ const hasFilters = computed(() => !!(courierId.value || ui.restaurantId || dq.va
       <div><b class="num">{{ c.onway }}</b><span>Yo'lda</span></div>
       <div class="ok"><b class="num">{{ c.idle_couriers }}</b><span>Bo'sh kuryer</span></div>
     </div>
+    <span class="sp" />
+    <Btn variant="primary" icon="plus" @click="newOpen = true">Yangi buyurtma</Btn>
+    </div>
+    <NewOrderModal v-if="newOpen" @close="newOpen = false" @created="(id) => { reload(true); open(id, '') }" />
 
     <div class="body" :class="{ detail: mobileDetail }">
       <!-- Chap: ro'yxat -->
@@ -155,7 +162,8 @@ const hasFilters = computed(() => !!(courierId.value || ui.restaurantId || dq.va
 .wrap{height:100%;display:flex;flex-direction:column;min-height:0;padding:14px 14px 13px;gap:15px}
 .srch{position:relative;flex:0 1 446px;min-width:120px;margin-left:6px}.srch :deep(svg){position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--faint)}
 .srch .inp{width:100%;padding-left:34px;height:38px;border-radius:8px;font-size:14px}
-.kpis{display:flex;align-self:flex-start;flex:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.toprow{display:flex;align-items:flex-start;gap:12px;flex:none}
+.kpis{display:flex;flex:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .kpis div{padding:8px 13px 7px;border-left:1px solid var(--line);display:flex;flex-direction:column;align-items:flex-start;gap:2px}.kpis div:first-child{border-left:0}
 .kpis b{font-size:20px;line-height:1.2;font-weight:700}.kpis span{font-size:12.5px;color:var(--muted);white-space:nowrap;line-height:1.3}
 .kpis .warn b{color:var(--red)}.kpis .ok b{color:var(--teal)}
@@ -193,6 +201,6 @@ kbd{font:inherit;font-size:11px;border:1px solid var(--line);border-radius:4px;p
   .wrap{padding:10px 12px;gap:10px}
   .body{grid-template-columns:1fr}
   .body:not(.detail) .det{display:none}.body.detail .list{display:none}
-  .back{display:inline-flex}.kpis{align-self:stretch;overflow:auto}
+  .back{display:inline-flex}.kpis{overflow:auto;min-width:0}
 }
 </style>

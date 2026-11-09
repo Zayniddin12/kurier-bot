@@ -219,11 +219,13 @@ async def main(do_reset: bool):
         for o in hist:
             if o.status == "delivered":
                 db.add_all(vendor_entries(o, o.delivered_at))
-                ledger.append(LedgerEntry(courier_id=o.courier_id, type="earn", amount=courier_earning(o.delivery_fee),
-                                          order_id=o.id, note="Yetkazish haqi", created_at=o.delivered_at))
                 if o.pay_method == "Naqd":
-                    ledger.append(LedgerEntry(courier_id=o.courier_id, type="cash", amount=-o.total, order_id=o.id,
-                                              note="Naqd pul mijozdan olindi", created_at=o.delivered_at))
+                    ledger.append(LedgerEntry(courier_id=o.courier_id, type="cash",
+                                              amount=-(o.total - courier_earning(o.delivery_fee)), order_id=o.id,
+                                              note="Naqd pul mijozdan olindi (yetkazish haqi ayirildi)", created_at=o.delivered_at))
+                else:
+                    ledger.append(LedgerEntry(courier_id=o.courier_id, type="earn", amount=courier_earning(o.delivery_fee),
+                                              order_id=o.id, note="Yetkazish haqi", created_at=o.delivered_at))
 
         # ---- faol buyurtmalar va kuryer joylashuvi
         def center():

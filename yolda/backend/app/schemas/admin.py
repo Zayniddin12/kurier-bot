@@ -92,6 +92,25 @@ class OrderLocationIn(BaseModel):
     address: str | None = Field(default=None, max_length=400)
 
 
+class OperatorItemIn(BaseModel):
+    menu_id: int = Field(ge=0)
+    qty: int = Field(ge=1, le=100)
+
+
+class OperatorOrderIn(BaseModel):
+    restaurant_id: int
+    customer_name: str = Field(min_length=1, max_length=200)
+    customer_phone: str = Field(min_length=5, max_length=30)
+    address: str = Field(min_length=1, max_length=400)
+    district: str = Field(default="", max_length=100)
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
+    items: list[OperatorItemIn] = Field(min_length=1)
+    note: str | None = Field(default=None, max_length=500)
+    courier_note: str | None = Field(default=None, max_length=500)
+    delivery_fee: int | None = Field(default=None, ge=0)   # koordinata bo'lmasa qo'lda
+
+
 class AssignIn(BaseModel):
     courier_id: int
 

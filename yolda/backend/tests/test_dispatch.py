@@ -133,9 +133,9 @@ async def test_full_flow_ledger_and_queue(db):
     assert o.status == "delivered" and o.pay_status == "collected"
     assert c.current_order_id == o2.id and not o2.queued                       # navbatdagi avtomatik olindi
     entries = (await db.execute(select(LedgerEntry).where(LedgerEntry.courier_id == c.id))).scalars().all()
-    assert {e.type for e in entries} == {"earn", "cash"}
+    assert {e.type for e in entries} == {"cash"}      # naqd buyurtma: yetkazish haqi cash yozuvidan ayirilgan
     assert c.balance == sum(e.amount for e in entries)
-    assert next(e for e in entries if e.type == "cash").amount == -o.total
+    assert next(e for e in entries if e.type == "cash").amount == -(o.total - ledger.courier_earning(o.delivery_fee))
     ve = (await db.execute(select(VendorLedgerEntry).where(VendorLedgerEntry.restaurant_id == r.id))).scalars().all()
     assert {e.type for e in ve} == {"payment"}
     assert next(e for e in ve if e.type == "payment").amount == o.subtotal

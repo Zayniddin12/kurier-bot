@@ -121,3 +121,25 @@ async def test_order_route_without_courier(client, db):
     o = await _order(db, r)
     d = (await client.get(f"/api/admin/operator/orders/{o.id}/route", headers=h)).json()
     assert len(d["legs"]) == 1 and d["legs"][0]["to"] == "customer"
+
+
+async def test_operator_creates_cash_order_from_static_menu(client, db):
+    h = await _h(client, db)
+    r = await make_restaurant(db)
+    menu = (await client.get(f"/api/admin/operator/restaurants/{r.id}/menu", headers=h)).json()["items"]
+    assert menu and {"id", "name", "price"} <= set(menu[0])
+    q = (await client.get("/api/admin/operator/quote", params={"restaurant_id": r.id, "lat": 41.37, "lng": 69.30}, headers=h)).json()
+    assert q["delivery_fee"] > 0
+    body = {"restaurant_id": r.id, "customer_name": "Ali", "customer_phone": "+998901234567", "address": "Test ko'chasi 1",
+            "lat": 41.37, "lng": 69.30, "items": [{"menu_id": menu[0]["id"], "qty": 2}], "note": "Achchiq bo'lmasin",
+            "courier_note": "Qo'ng'iroq qiling"}
+    res = await client.post("/api/admin/operator/orders", json=body, headers=h)
+    assert res.status_code == 201, res.text
+    o = (await db.execute(select(Order).order_by(Order.id.desc()))).scalars().first()
+    assert o.pay_method == "Naqd" and o.pay_status == "cod" and o.external_id.startswith("OP-")
+    assert o.subtotal == 2 * menu[0]["price"] and o.total == o.subtotal + o.delivery_fee
+    assert o.courier_note == "Qo'ng'iroq qiling" and o.note == "Achchiq bo'lmasin"
+    bad = await client.post("/api/admin/operator/orders", json={**body, "items": [{"menu_id": 9999, "qty": 1}]}, headers=h)
+    assert bad.status_code == 422
+    nofee = await client.post("/api/admin/operator/orders", json={**body, "lat": None, "lng": None}, headers=h)
+    assert nofee.status_code == 422
