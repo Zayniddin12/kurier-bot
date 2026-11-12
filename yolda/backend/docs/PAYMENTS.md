@@ -38,7 +38,7 @@ Buyurtma `payment.method` hisobotlarda haqiqiy usulga o'zgaradi (Payme, Click, U
 | `POST /orders/{external_id}/pay` | Havolani yaratadi/qaytaradi. Body: `{"method": "card\|payme\|click\|uzum…", "return_url", "return_error_url", "lang": "uz\|ru\|en"}`. **Idempotent**: shu usulda faol havola bo'lsa o'sha qaytadi |
 | `GET /orders/{external_id}/payment` | `{pay_status, pay_method, payment: {method, status, pay_url, paid_at, card, receipt_url}}` |
 
-`payment.status`: `pending` · `paid` · `cancelled` · `expired` · `refund_required`.
+`payment.status`: `pending` · `paid` · `cancelled` · `expired` · `refund_required` · `refunded`.
 `POST /orders` da havola olinmasa buyurtma baribir yaratiladi: `payment: null` va `payment_error` bo'ladi — `/pay` ni qayta chaqiring.
 
 ## Webhook
@@ -49,7 +49,9 @@ Mavjud webhook (`X-Yolda-Signature`) ga yangi hodisa:
 
 ## Bekor qilish va qaytarish
 Buyurtma bekor bo'lsa: to'lanmagan havola bekor qilinadi (keyin to'lasa ham pul avtomatik mijozga qaytariladi);
-**to'langan** to'lov `refund_required` bo'ladi — qaytarishni operator Multicard kabinetida bajaradi (avtomatik qaytarish keyingi bosqich).
+**to'langan** to'lov `refund_required` bo'ladi — operator dashbordning «Onlayn to'lovlar» sahifasida «Qaytarish» tugmasini bosadi (Multicard `DELETE /payment/{uuid}`), status `refunded` bo'ladi.
+
+Callback kechiksa, `GET /orders/{external_id}/payment` Multicard dan holatni o'zi so'raydi (`GET /payment/{uuid}`) va to'langan bo'lsa buyurtmani tasdiqlaydi.
 
 ---
 
@@ -69,4 +71,4 @@ Quyidagilar hujjatning ochiq qismida to'liq berilmagan, shuning uchun kodda taxm
 1. Ilova to'lovlari (`POST /payment`: Payme/Click/Uzum…) uchun callback formati hujjatda alohida yozilmagan; kod invoys callback'idagi
    kabi (imzo + `invoice_id`) deb kutadi. Har usulda sandbox to'lov qilib tekshiring.
 2. Fiskal chek (`ofd`) uchun IKPU (`mxik`) va `package_code` — hamma taomga bitta kod; buxgalter bilan aniqlashtiring.
-3. Avtomatik qaytarish va callback yo'qolganda holatni so'rab tekshirish (`GET /invoice/{invoice_id}`) hali yozilmagan.
+3. Qaytarish hozircha operator tugmasi orqali (buyurtma bekor bo'lganda avtomatik emas).

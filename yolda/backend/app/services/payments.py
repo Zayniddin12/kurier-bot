@@ -199,6 +199,11 @@ async def handle_callback(db, data: dict) -> tuple[bool, str]:
     o = await db.get(Order, p.order_id)
     if o.status == "cancelled" or p.status != "pending" or o.pay_status != "pending":
         return False, "Buyurtma bekor qilingan yoki to'lov kutilmayapti"
+    await _apply_paid(db, p, o, data, uuid)
+    return True, "OK"
+
+
+async def _apply_paid(db, p: Payment, o: Order, data: dict, uuid: str = ""):
     p.status, p.paid_at, p.provider_uuid = "paid", datetime.now(timezone.utc), uuid or p.provider_uuid
     p.billing_id, p.card_pan, p.ps = data.get("billing_id"), data.get("card_pan"), data.get("ps")
     p.receipt_url, p.raw_callback = data.get("receipt_url"), data
@@ -206,7 +211,39 @@ async def handle_callback(db, data: dict) -> tuple[bool, str]:
     await osvc.set_payment(db, o, "paid")
     r = await db.get(Restaurant, o.restaurant_id)
     webhooks.queue_payment(db, o, r, "payment.paid", p)
-    return True, "OK"
+
+
+async def sync_payment(db, p: Payment) -> Payment:
+    """Callback kelmagan bo'lsa: Multicard dan holatni so'rab (GET /payment/{uuid}) to'langan bo'lsa tasdiqlaydi."""
+    if p.status != "pending" or not p.provider_uuid or not configured():
+        return p
+    d = (await _call("GET", f"/payment/{p.provider_uuid}")).get("data") or {}
+    if d.get("status") != "success":
+        return p
+    amount = d.get("payment_amount") if d.get("payment_amount") is not None else d.get("total_amount")
+    if amount is not None and int(float(amount)) != p.amount * 100:
+        log.error("Multicard sync: summa mos kelmadi %s", p.invoice_id)
+        return p
+    o = await db.get(Order, p.order_id)
+    if o.status == "cancelled" or o.pay_status != "pending":
+        return p
+    await _apply_paid(db, p, o, d, p.provider_uuid)
+    return p
+
+
+async def refund_payment(db, p: Payment) -> Payment:
+    """To'langan to'lovni mijozga qaytaradi: DELETE /payment/{uuid} (Multicard)."""
+    if p.status not in ("paid", "refund_required"):
+        raise PaymentError("Faqat to'langan to'lovni qaytarish mumkin", 409)
+    if not p.provider_uuid:
+        raise PaymentError("Multicard tranzaksiya ID yo'q", 409)
+    await _call("DELETE", f"/payment/{p.provider_uuid}")
+    p.status = "refunded"
+    o = await db.get(Order, p.order_id)
+    if o.pay_status == "paid":
+        o.pay_status = "refunded"
+    await feed(db, f"To'lov qaytarildi: <b>#{o.id}</b> · {p.amount:,} so'm".replace(",", " "), "amber", o.restaurant_id)
+    return p
 
 
 async def on_order_cancelled(db, o: Order):

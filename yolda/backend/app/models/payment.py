@@ -16,7 +16,7 @@ class Payment(Base):
     invoice_id: Mapped[str] = mapped_column(String(100), unique=True)   # bizning identifikator (Multicard ga yuboriladi)
     provider_uuid: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)  # Multicard tranzaksiya ID
     amount: Mapped[int] = mapped_column(BigInteger)                     # so'mda
-    # pending | paid | cancelled | expired | refund_required
+    # pending | paid | cancelled | expired | refund_required | refunded
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
     checkout_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     short_link: Mapped[str | None] = mapped_column(String(300), nullable=True)

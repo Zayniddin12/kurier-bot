@@ -25,6 +25,7 @@ const nav = computed(() => [
   ...(auth.isStaff ? [] : [{ to: '/operator', icon: 'headset', label: 'Operator navbati' }]),
   { to: '/orders', icon: 'orders', label: 'Buyurtmalar' },
   { to: '/restaurants', icon: 'store', label: 'Restoranlar' },
+  { to: '/payments', icon: 'dollar', label: "Onlayn to'lovlar" },
   ...(auth.isStaff ? [] : [
     { head: 'Moliya' },
     { to: '/finance/couriers', icon: 'truck', label: 'Deliverlar' },

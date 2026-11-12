@@ -133,6 +133,12 @@ async def payment_status(external_id: str, r: Restaurant = Depends(restaurant_au
     from app.models import Payment
     o = await find(db, r, external_id)
     p = (await db.execute(select(Payment).where(Payment.order_id == o.id).order_by(Payment.id.desc()))).scalars().first()
+    if p and p.status == "pending":      # callback kechikkan bo'lsa Multicard dan holatni so'raymiz
+        try:
+            await psvc.sync_payment(db, p)
+            await commit(db)
+        except psvc.PaymentError:
+            await db.rollback()
     return {"pay_status": o.pay_status, "pay_method": o.pay_method, "payment": psvc.payment_dict(p) if p else None}
 
 
