@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { get, post, patch, errMsg } from '@/api/client'
+import { get, post, errMsg } from '@/api/client'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { useRestaurantsStore } from '@/stores/restaurants'
 import { useLoad } from '@/utils/useLoad'
 import { agoSec, dmyhm } from '@/utils/format'
+import { groups, openUntil, parseHours } from '@/utils/schedule'
 import PromptModal from '@/components/modals/PromptModal.vue'
 import EditRestaurantModal from '@/components/modals/EditRestaurantModal.vue'
 import IntegrationModal from '@/components/modals/IntegrationModal.vue'
@@ -16,22 +17,23 @@ const route = useRoute(), router = useRouter(), ui = useUiStore(), auth = useAut
 const id = computed(() => Number(route.params.id))
 const { data: d, loading, error, reload } = useLoad<any>(() => get(`/restaurants/${id.value}`), [id], ['restaurant.updated', 'order.created', 'order.updated'])
 const r = computed(() => d.value?.restaurant)
-const modal = ref<'' | 'edit' | 'hours' | 'pause' | 'integ' | 'menu'>('')
+const modal = ref<'' | 'edit' | 'pause' | 'integ' | 'menu'>('')
 const tags = computed(() => (r.value?.cuisine || '').split(',').map((x: string) => x.trim()).filter(Boolean))
 const open = computed(() => r.value?.status !== 'paused')
-const closesAt = computed(() => { const m = (r.value?.hours || '').split(/[–-]/); return m.length > 1 ? m[1].trim() : '' })
+const sch = computed<string[]>(() => r.value?.schedule || parseHours(r.value?.hours))
+const grp = computed(() => groups(sch.value))
+const closesAt = computed(() => openUntil(sch.value))
 
 async function run(fn: () => Promise<any>, msg: string) {
   try { await fn(); ui.toast(msg); reload(true); rs.load() } catch (e) { ui.toast(errMsg(e), 'var(--red)') }
 }
 function toggle() { if (!auth.canManage) return; if (open.value) modal.value = 'pause'; else run(() => post(`/restaurants/${id.value}/resume`), 'Restoran faollashtirildi') }
 const pause = (reason: string) => { modal.value = ''; run(() => post(`/restaurants/${id.value}/pause`, { reason }), "Restoran pauzaga qo'yildi") }
-const saveHours = (v: string) => { modal.value = ''; run(() => patch(`/restaurants/${id.value}`, { hours: v }), 'Ish vaqti saqlandi') }
 const soon = (t: string) => ui.toast(`${t} — bu bo'lim hali ulanmagan`, 'var(--side)')
 
 const actions = computed(() => [
   { l: 'Tahrirlash', i: 'edit', f: () => (modal.value = 'edit') },
-  { l: 'Ish vaqtlari', i: 'clock', f: () => (modal.value = 'hours') },
+  { l: 'Ish vaqtlari', i: 'clock', f: () => router.push(`/restaurants/${id.value}/hours`) },
   { l: 'Integratsiya', i: 'monitor', f: () => (modal.value = 'integ') },
   { l: 'Badge', i: 'tag', f: () => soon('Badge') },
   { l: 'Barcha mahsulotlar', i: 'box', f: () => soon('Barcha mahsulotlar') },
@@ -110,8 +112,8 @@ const actions = computed(() => [
           </section>
           <section class="card">
             <header><Icon name="clock" :size="16" />Ish vaqtlari</header>
-            <div class="hr"><b>Har kuni</b><span class="num">{{ r.hours }}</span></div>
-            <div class="hs" :class="{ am: !open }"><Icon name="clock" :size="14" />{{ open ? (closesAt ? `${closesAt} gacha ochiq` : 'Ochiq') : 'Hozir buyurtma qabul qilmayapti' }}</div>
+            <div v-for="g in grp" :key="g.days" class="hr"><b>{{ g.days }}</b><span class="num">{{ g.text }}</span></div>
+            <div class="hs" :class="{ am: !open || !closesAt }"><Icon name="clock" :size="14" />{{ !open ? 'Hozir buyurtma qabul qilmayapti' : closesAt ? `${closesAt} gacha ochiq` : 'Hozir ish vaqti emas' }}</div>
           </section>
         </div>
       </div>
@@ -120,7 +122,6 @@ const actions = computed(() => [
       <IntegrationModal v-if="modal === 'integ'" :r="r" @close="modal = ''" @done="reload(true)" />
       <RestaurantMenuModal v-if="modal === 'menu'" :r="r" @close="modal = ''" />
       <PromptModal v-if="modal === 'pause'" title="Restoranni pauzaga qo'yish" sub="Pauza davomida yangi buyurtma qabul qilinmaydi" label="Sabab" ok="Pauza" @close="modal = ''" @submit="pause" />
-      <PromptModal v-if="modal === 'hours'" title="Ish vaqtlari" label="Ish vaqti (masalan 09:00–22:00)" ok="Saqlash" :initial="r.hours" @close="modal = ''" @submit="saveHours" />
     </template>
   </div>
 </template>
@@ -163,7 +164,7 @@ dt:nth-of-type(even),dt:nth-of-type(even)+dd{background:var(--surface-2)}
 dl>:nth-last-child(-n+2){border-bottom:0}
 .brk{word-break:break-all}
 .pl{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:600}.pl.gr{background:var(--primary-soft);color:var(--teal)}.pl.am{background:var(--amber-soft);color:var(--amber)}
-.hr{display:flex;justify-content:space-between;margin:14px 18px 0;padding:12px 14px;background:var(--surface-2);border-radius:8px;font-size:14px}
+.hr{display:flex;justify-content:space-between;gap:12px;margin:14px 18px 0;padding:12px 14px;background:var(--surface-2);border-radius:8px;font-size:14px}
 .hs{display:flex;align-items:center;gap:7px;margin-top:14px;padding:12px 18px;background:var(--primary-soft);color:var(--teal);font-weight:600;font-size:13.5px}.hs.am{background:var(--amber-soft);color:var(--amber)}
 @media (max-width:1100px){.stats{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}.hrow{flex-wrap:wrap}.sw{width:100%}}
 @media (max-width:560px){.stats{grid-template-columns:1fr}.logo{width:56px;height:56px;font-size:20px}}

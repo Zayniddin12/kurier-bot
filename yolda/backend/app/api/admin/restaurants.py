@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from datetime import timedelta
 
@@ -113,6 +114,25 @@ async def create(body: RestaurantIn, u: User = Depends(ops_user), db: AsyncSessi
     return {"restaurant": restaurant_row(r), "api_key": key if generated else None, "webhook_secret": secret}
 
 
+def schedule_summary(days: list[str]) -> str:
+    def ranges(d: str) -> list[str]:
+        out, i = [], 0
+        while i < 48:
+            if d[i] == "1":
+                j = i
+                while j + 1 < 48 and d[j + 1] == "1":
+                    j += 1
+                e = (j + 1) * 30 - 1
+                out.append(f"{i // 2:02d}:{i % 2 * 30:02d}–{e // 60:02d}:{e % 60:02d}")
+                i = j + 1
+            else:
+                i += 1
+        return out
+    if len(set(days)) == 1:
+        return (", ".join(ranges(days[0])) or "Dam olish")[:200]
+    return "Jadval bo'yicha"
+
+
 @router.patch("/restaurants/{rid}")
 async def patch(rid: int, body: RestaurantPatch, u: User = Depends(ops_user), db: AsyncSession = Depends(get_db)):
     r = await load(db, u, rid)
@@ -122,6 +142,10 @@ async def patch(rid: int, body: RestaurantPatch, u: User = Depends(ops_user), db
             v = v or None
             if v and not r.webhook_secret:
                 secret = r.webhook_secret = new_webhook_secret()
+        if k == "schedule":
+            if any(not re.fullmatch(r"[01]{48}", d) for d in v):
+                raise ApiError(422, "Jadval formati noto'g'ri")
+            r.hours = schedule_summary(v)
         setattr(r, k, v)
     emit(db, "restaurant.updated", restaurant_row(r), r.id)
     await commit(db)

@@ -77,6 +77,7 @@ class RestaurantPatch(BaseModel):
     phone: str | None = None
     webhook_url: str | None = None
     hours: str | None = None
+    schedule: list[str] | None = Field(None, min_length=7, max_length=7)
     manager: str | None = None
     prep_minutes: int | None = None
     color: str | None = None

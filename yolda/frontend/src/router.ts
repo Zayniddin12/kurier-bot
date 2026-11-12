@@ -14,6 +14,7 @@ const router = createRouter({
         { path: 'couriers', component: () => import('@/views/CouriersView.vue'), meta: { title: 'Kuryerlar', sub: "Ro'yxat, balans va ish holati", noStaff: true } },
         { path: 'orders', component: () => import('@/views/OrdersView.vue'), meta: { title: 'Buyurtmalar', sub: 'Kunlik, haftalik va oylik tarix' } },
         { path: 'operator', component: () => import('@/views/OperatorOrdersView.vue'), meta: { title: 'Operator buyurtmalari', sub: 'Jonli navbat, kuryer biriktirish va nazorat', flush: true, noStaff: true } },
+        { path: 'restaurants/:id(\\d+)/hours', component: () => import('@/views/RestaurantHoursView.vue'), meta: { title: 'Ish vaqtlari' } },
         { path: 'restaurants/:id(\\d+)', component: () => import('@/views/RestaurantDetailView.vue'), meta: { title: 'Restoran' } },
         { path: 'restaurants', component: () => import('@/views/RestaurantsView.vue'), meta: { title: 'Restoranlar', sub: 'Ulangan hamkorlar' } },
         { path: 'finance/couriers', component: () => import('@/views/FinanceCouriersView.vue'), meta: { title: 'Haydovchi tranzaksiyalari', sub: "Kuryerlarning kirim-chiqimlari", noStaff: true } },

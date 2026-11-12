@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import BigInteger, DateTime, Float, Integer, Numeric, String, func
+from sqlalchemy import JSON, BigInteger, DateTime, Float, Integer, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db import Base
 
@@ -21,7 +21,9 @@ class Restaurant(Base):
     rating: Mapped[float] = mapped_column(Numeric(2, 1), default=4.5)
     prep_minutes: Mapped[int] = mapped_column(Integer, default=15)
     phone: Mapped[str] = mapped_column(String(30), default="")
-    hours: Mapped[str] = mapped_column(String(30), default="09:00–22:00")
+    hours: Mapped[str] = mapped_column(String(200), default="09:00–22:00")
+    # haftalik jadval: 7 ta satr (0=yakshanba…6=shanba), har biri 48 ta "0"/"1" (30 daqiqalik yacheykalar)
+    schedule: Mapped[list | None] = mapped_column(JSON, nullable=True)
     manager: Mapped[str] = mapped_column(String(100), default="")
     connected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

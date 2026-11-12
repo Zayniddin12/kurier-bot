@@ -147,7 +147,7 @@ def restaurant_row(r, today=0, active=0) -> dict:
         "id": r.id, "name": r.name, "cuisine": r.cuisine, "district": r.district, "address": r.address,
         "lat": r.lat, "lng": r.lng, "color": r.color, "integration_type": r.integration_type,
         "pos_system": r.pos_system, "status": r.status, "pause_reason": r.pause_reason, "rating": float(r.rating),
-        "prep_minutes": r.prep_minutes, "phone": r.phone, "hours": r.hours, "manager": r.manager,
+        "prep_minutes": r.prep_minutes, "phone": r.phone, "hours": r.hours, "schedule": r.schedule, "manager": r.manager,
         "connected_at": iso(r.connected_at), "last_sync_at": iso(r.last_sync_at),
         "api_key_prefix": r.api_key_prefix, "webhook_url": r.webhook_url,
         "today": today, "active": active,
